@@ -1,6 +1,18 @@
+# Dependencies
 node_modules/
-dist/
-build/
+
+# Environment variables
 .env
 .env.*
-!.env.example
+
+# Build output
+dist/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db
