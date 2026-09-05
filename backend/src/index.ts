@@ -2,6 +2,7 @@ import express from "express"
 import cors from "cors"
 
 import db from "./db/database.js"
+import trailRoutes from "./routes/trails.js"
 
 const app = express()
 const PORT = 3000
@@ -20,6 +21,8 @@ app.get("/api/health", (_req, res) => {
     database: result,
   })
 })
+
+app.use("/api/trails", trailRoutes)
 
 app.listen(PORT, () => {
   console.log(`Talus API running at http://localhost:${PORT}`)
