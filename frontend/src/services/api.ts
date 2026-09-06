@@ -148,6 +148,20 @@ export async function getTrails(): Promise<RankedTrail[]> {
   }))
 }
 
+export async function getTrail(
+  trailId: number
+): Promise<RankedTrail["trail"]> {
+  const response = await fetch(
+    `${API_BASE_URL}/trails/${trailId}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch trail")
+  }
+
+  return response.json()
+}
+
 export async function createActivity(input: {
   user_id: number
   trail_id: number

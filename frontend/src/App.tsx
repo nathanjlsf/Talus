@@ -3,13 +3,16 @@ import Rankings from "./pages/Rankings"
 import Compare from "./pages/Compare"
 import AddHike from "./pages/AddHike"
 import HikeDNA from "./pages/HikeDNA"
+import TrailDetail from "./pages/TrailDetail"
 
 function App() {
   const path = window.location.pathname
 
   let page
 
-  if (path === "/compare") {
+  if (path.startsWith("/trails/")) {
+    page = <TrailDetail />
+  } else if (path === "/compare") {
     page = <Compare />
   } else if (path === "/add-hike") {
     page = <AddHike />

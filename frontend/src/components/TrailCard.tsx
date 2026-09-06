@@ -17,7 +17,12 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
   const matchScore = Math.round(score)
 
   return (
-    <article className="flex gap-6 border-b border-[#d8d2c4] py-7">
+    <article 
+      onClick={() => {
+        window.location.href = `/trails/${trail.id}`
+      }}
+      className="flex cursor-pointer gap-6 border-b border-[#d8d2c4] py-7 transition hover:bg-[#ebe6da]"
+    >
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#314936] text-lg font-semibold text-white">
         {rank}
       </div>
