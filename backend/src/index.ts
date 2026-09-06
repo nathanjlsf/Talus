@@ -5,6 +5,8 @@ import db from "./db/database.js"
 import trailRoutes from "./routes/trails.js"
 import comparisonRoutes from "./routes/comparisons.js"
 import preferenceRoutes from "./routes/preferences.js"
+import activityRoutes from "./routes/activities.js"
+import experienceRoutes from "./routes/experiences.js"
 
 const app = express()
 const PORT = 3000
@@ -27,6 +29,8 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/trails", trailRoutes)
 app.use("/api/comparisons", comparisonRoutes)
 app.use("/api/preferences", preferenceRoutes)
+app.use("/api/activities", activityRoutes)
+app.use("/api/experiences", experienceRoutes)
 
 app.listen(PORT, () => {
   console.log(`Talus API running at http://localhost:${PORT}`)

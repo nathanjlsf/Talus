@@ -9,3 +9,7 @@ body {
   min-width: 320px;
   background: #f3efe4;
 }
+
+* {
+  box-sizing: border-box;
+}
