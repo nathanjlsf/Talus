@@ -1,5 +1,15 @@
 const API_BASE_URL = "http://localhost:3000/api"
 
+export interface Trail {
+  id: number
+  name: string
+  location: string | null
+  description: string | null
+  distance_miles: number
+  elevation_gain_feet: number
+  difficulty: string
+}
+
 export interface RecommendationExplanation {
   attribute: UserPreference["attribute"]
   direction: "positive" | "negative"
@@ -130,22 +140,46 @@ export async function submitComparison(
   }
 }
 
-export async function getTrails(): Promise<RankedTrail[]> {
+export async function getTrails(filters: {
+  search?: string
+  location?: string
+  difficulty?: string
+  maxDistance?: number
+  maxElevation?: number
+} = {}): Promise<Trail[]> {
+  const params = new URLSearchParams()
+
+  if (filters.search?.trim()) {
+    params.set("search", filters.search.trim())
+  }
+
+  if (filters.location) {
+    params.set("location", filters.location)
+  }
+
+  if (filters.difficulty) {
+    params.set("difficulty", filters.difficulty)
+  }
+
+  if (filters.maxDistance !== undefined) {
+    params.set("maxDistance", String(filters.maxDistance))
+  }
+
+  if (filters.maxElevation !== undefined) {
+    params.set("maxElevation", String(filters.maxElevation))
+  }
+
+  const query = params.toString()
+
   const response = await fetch(
-    `${API_BASE_URL}/trails`
+    `${API_BASE_URL}/trails${query ? `?${query}` : ""}`
   )
 
   if (!response.ok) {
     throw new Error("Failed to fetch trails")
   }
 
-  const trails = await response.json()
-
-  return trails.map((trail: RankedTrail["trail"]) => ({
-    rank: 0,
-    trail,
-    score: 0,
-  }))
+  return response.json()
 }
 
 export async function getTrail(

@@ -5,11 +5,44 @@ import {
   findTrail,
   listTrails,
   removeTrail,
+  searchTrailList,
 } from "../services/trailService.js"
 
 const router = Router()
 
-router.get("/", (_req, res) => {
+router.get("/", (req, res) => {
+  const search = String(req.query.search ?? "").trim()
+  const difficulty = String(req.query.difficulty ?? "").trim()
+
+  const maxDistanceValue = Number(req.query.maxDistance)
+  const maxElevationValue = Number(req.query.maxElevation)
+
+  const maxDistance = Number.isFinite(maxDistanceValue)
+    ? maxDistanceValue
+    : undefined
+
+  const maxElevation = Number.isFinite(maxElevationValue)
+    ? maxElevationValue
+    : undefined
+
+  const hasFilters =
+    search ||
+    difficulty ||
+    maxDistance !== undefined ||
+    maxElevation !== undefined
+
+  if (hasFilters) {
+    const trails = searchTrailList({
+      search,
+      difficulty,
+      maxDistance,
+      maxElevation,
+    })
+
+    res.json(trails)
+    return
+  }
+
   const trails = listTrails()
 
   res.json(trails)

@@ -27,6 +27,61 @@ export function getAllTrails(): Trail[] {
     .all() as Trail[]
 }
 
+export function searchTrails(filters: {
+  search?: string | undefined
+  difficulty?: string | undefined
+  maxDistance?: number | undefined
+  maxElevation?: number | undefined
+}): Trail[] {
+  const conditions: string[] = []
+  const parameters: (string | number)[] = []
+
+  if (filters.search?.trim()) {
+    const query = `%${filters.search.trim()}%`
+
+    conditions.push(`
+      (
+        name LIKE ?
+        OR location LIKE ?
+        OR description LIKE ?
+      )
+    `)
+
+    parameters.push(query, query, query)
+  }
+
+  if (filters.difficulty) {
+    conditions.push("difficulty = ?")
+    parameters.push(filters.difficulty)
+  }
+
+  if (filters.maxDistance !== undefined) {
+    conditions.push("distance_miles <= ?")
+    parameters.push(filters.maxDistance)
+  }
+
+  if (filters.maxElevation !== undefined) {
+    conditions.push("elevation_gain_feet <= ?")
+    parameters.push(filters.maxElevation)
+  }
+
+  const whereClause =
+    conditions.length > 0
+      ? `WHERE ${conditions.join(" AND ")}`
+      : ""
+
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM trails
+      ${whereClause}
+      ORDER BY name ASC
+      `
+    )
+    .all(...parameters) as Trail[]
+}
+
 export function getTrailById(id: number): Trail | undefined {
   return db
     .prepare(

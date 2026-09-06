@@ -3,6 +3,7 @@ import {
   deleteTrail,
   getAllTrails,
   getTrailById,
+  searchTrails,
   type Trail,
 } from "../repositories/trailRepository.js"
 
@@ -31,4 +32,13 @@ export function addTrail(input: {
 
 export function removeTrail(id: number): boolean {
   return deleteTrail(id)
+}
+
+export function searchTrailList(filters: {
+  search?: string | undefined
+  difficulty?: string | undefined
+  maxDistance?: number | undefined
+  maxElevation?: number | undefined
+}): Trail[] {
+  return searchTrails(filters)
 }

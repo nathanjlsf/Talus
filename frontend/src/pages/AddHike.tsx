@@ -6,11 +6,11 @@ import {
   createActivity,
   createExperience,
   getTrails,
-  type RankedTrail,
+  type Trail,
 } from "../services/api"
 
 function AddHike() {
-  const [trails, setTrails] = useState<RankedTrail[]>([])
+  const [trails, setTrails] = useState<Trail[]>([])
   const [trailId, setTrailId] = useState("")
 
   const [overallRating, setOverallRating] = useState(0)
@@ -44,7 +44,7 @@ function AddHike() {
   }, [])
 
   const selectedTrail = trails.find(
-    (item) => item.trail.id === Number(trailId)
+    (trail) => trail.id === Number(trailId)
   )
 
 async function handleSubmit(event: SubmitEvent) {
@@ -68,9 +68,9 @@ async function handleSubmit(event: SubmitEvent) {
       const activity = await createActivity({
         user_id: 1,
         trail_id: Number(trailId),
-        distance_miles: selectedTrail?.trail.distance_miles,
+        distance_miles: selectedTrail?.distance_miles,
         elevation_gain_feet:
-          selectedTrail?.trail.elevation_gain_feet,
+          selectedTrail?.elevation_gain_feet,
       })
 
       await createExperience({
@@ -156,10 +156,10 @@ async function handleSubmit(event: SubmitEvent) {
 
             {trails.map((item) => (
               <option
-                key={item.trail.id}
-                value={item.trail.id}
+                key={item.id}
+                value={item.id}
               >
-                {item.trail.name}
+                {item.name}
               </option>
             ))}
           </select>
@@ -175,14 +175,14 @@ async function handleSubmit(event: SubmitEvent) {
 
               <div>
                 <p className="font-medium">
-                  {selectedTrail.trail.name}
+                  {selectedTrail.name}
                 </p>
 
                 <p className="mt-1 text-sm text-[#687565]">
-                  {selectedTrail.trail.distance_miles} mi ·{" "}
-                  {selectedTrail.trail.elevation_gain_feet.toLocaleString()}{" "}
+                  {selectedTrail.distance_miles} mi ·{" "}
+                  {selectedTrail.elevation_gain_feet.toLocaleString()}{" "}
                   ft elevation ·{" "}
-                  {selectedTrail.trail.difficulty}
+                  {selectedTrail.difficulty}
                 </p>
               </div>
             </div>
