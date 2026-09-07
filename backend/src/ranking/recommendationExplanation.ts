@@ -52,55 +52,72 @@ export function generateRecommendationExplanations(
   trail: TrailAttributes,
   preferences: UserPreference[]
 ): RecommendationExplanation[] {
-  return preferences
-    .map((preference) => {
-      const trailValue = getTrailValue(
-        trail,
-        preference.attribute
-      )
+  const candidates: Array<
+    RecommendationExplanation & {
+      contribution: number
+    }
+  > = []
 
-      if (
-        trailValue === null ||
-        preference.confidence < 0.4
-      ) {
-        return null
-      }
+  for (const preference of preferences) {
+    const trailValue = getTrailValue(
+      trail,
+      preference.attribute
+    )
 
-      const preferenceStrength =
-        (preference.score - 50) / 50
+    if (
+      trailValue === null ||
+      preference.confidence < 0.4
+    ) {
+      continue
+    }
 
-      const trailSignal =
-        (trailValue - 0.5) / 0.5
+    const preferenceStrength =
+      (preference.score - 50) / 50
 
-      const contribution =
-        trailSignal *
-        preferenceStrength
+    const trailSignal =
+      (trailValue - 0.5) / 0.5
 
-      if (Math.abs(contribution) < 0.1) {
-        return null
-      }
+    const contribution =
+      trailSignal *
+      preferenceStrength *
+      preference.confidence
 
-      const label =
-        labels[preference.attribute]
+    if (Math.abs(contribution) < 0.1) {
+      continue
+    }
 
-      if (contribution > 0) {
-        return {
-          attribute: preference.attribute,
-          direction: "positive",
-          message: `This trail's ${label} align with your preferences.`,
-        }
-      }
+    const label =
+      labels[preference.attribute]
 
-      return {
-        attribute: preference.attribute,
-        direction: "negative",
-        message: `This trail's ${label} may be less aligned with your preferences.`,
-      }
+    candidates.push({
+      attribute: preference.attribute,
+      direction:
+        contribution > 0
+          ? "positive"
+          : "negative",
+      message:
+        contribution > 0
+          ? `Strong match: this trail's ${label} align with your preferences.`
+          : `Potential mismatch: this trail's ${label} may be less aligned with your preferences.`,
+      contribution: Math.abs(contribution),
     })
-    .filter(
-      (
-        explanation
-      ): explanation is RecommendationExplanation =>
-        explanation !== null
+  }
+
+  return candidates
+    .sort(
+      (a, b) =>
+        b.contribution - a.contribution
+    )
+    .slice(0, 2)
+    .map(
+      ({
+        attribute,
+        direction,
+        message,
+      }) => ({
+        attribute,
+        direction,
+        message,
+      })
     )
 }

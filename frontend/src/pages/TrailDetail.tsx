@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ArrowLeft, Mountain, Sparkles } from "lucide-react"
+import { ArrowLeft, Check, Mountain, Sparkles } from "lucide-react"
 
 import {
   getTrail,
@@ -81,12 +81,12 @@ function TrailDetail() {
       <button
         type="button"
         onClick={() => {
-          window.location.href = "/"
+          window.location.href = "/trails"
         }}
         className="flex items-center gap-2 text-sm font-medium text-[#687565] transition hover:text-[#26352a]"
       >
         <ArrowLeft size={16} />
-        Back to recommendations
+        Back to Discover
       </button>
 
       <div className="mt-8 max-w-3xl">
@@ -190,21 +190,37 @@ function TrailDetail() {
         </div>
       )}
 
-      <div className="mt-10 flex items-center gap-3 rounded-3xl border border-dashed border-[#c9bfb0] bg-[#f0ece2] p-7">
-        <Mountain
-          size={24}
-          className="shrink-0 text-[#687565]"
-        />
+      <div className="mt-10 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#314936] p-7 text-white">
+        <div className="flex items-start gap-4">
+          <div className="rounded-full bg-white/10 p-3">
+            <Mountain size={22} />
+          </div>
 
-        <div>
-          <h2 className="font-semibold">
-            Start a hike
-          </h2>
+          <div className="flex-1">
+            <p className="text-xs font-medium uppercase tracking-[0.15em] text-[#d8dfd5]">
+              Ready to hike?
+            </p>
 
-          <p className="mt-1 text-sm leading-6 text-[#687565]">
-            GPS tracking and activity recording will be
-            available here in V2.
-          </p>
+            <h2 className="mt-2 text-2xl font-semibold">
+              Log your experience
+            </h2>
+
+            <p className="mt-2 max-w-xl leading-7 text-[#d8dfd5]">
+              Record this hike and tell Talus what you thought.
+              Your feedback helps improve future recommendations.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = `/add-hike?trail=${trail.id}`
+              }}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#f3efe4] px-5 py-3 font-medium text-[#26352a] transition hover:bg-white"
+            >
+              <Check size={17} />
+              Log this hike
+            </button>
+          </div>
         </div>
       </div>
     </section>

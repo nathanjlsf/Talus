@@ -29,6 +29,24 @@ function AddHike() {
       try {
         const data = await getTrails()
         setTrails(data)
+
+        const params = new URLSearchParams(
+          window.location.search
+        )
+
+        const trailParam = params.get("trail")
+
+        if (trailParam) {
+          const trailIdFromUrl = Number(trailParam)
+
+          const trailExists = data.some(
+            (trail) => trail.id === trailIdFromUrl
+          )
+
+          if (trailExists) {
+            setTrailId(trailParam)
+          }
+        }
       } catch (error) {
         setError(
           error instanceof Error
@@ -47,7 +65,7 @@ function AddHike() {
     (trail) => trail.id === Number(trailId)
   )
 
-async function handleSubmit(event: SubmitEvent) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
 
     if (!trailId) {

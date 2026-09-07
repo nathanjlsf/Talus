@@ -9,6 +9,7 @@ node_modules/
 dist/
 
 # SQLite
+data/
 *.db
 *.db-shm
 *.db-wal

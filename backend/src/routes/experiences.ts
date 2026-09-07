@@ -5,6 +5,14 @@ import {
   recordExperience,
 } from "../services/experienceService.js"
 
+import {
+  updateUserPreferences,
+} from "../services/preferenceService.js"
+
+import {
+  getActivityById,
+} from "../repositories/activityRepository.js"
+
 const router = Router()
 
 router.get("/:activityId", (req, res) => {
@@ -63,6 +71,15 @@ router.post("/", (req, res) => {
       solitude_rating,
       notes,
     })
+
+    const activity =
+      getActivityById(activity_id)
+
+    if (activity) {
+      updateUserPreferences(
+        activity.user_id
+      )
+    }
 
     res.status(201).json(experience)
   } catch (error) {

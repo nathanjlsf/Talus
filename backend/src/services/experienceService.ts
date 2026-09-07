@@ -1,9 +1,13 @@
 import {
   createExperience,
   getExperienceForActivity,
+  getExperiencesForUser,
 } from "../repositories/experienceRepository.js"
 
-import type { Experience } from "../repositories/experienceRepository.js"
+import type { 
+  Experience,
+  ExperienceWithTrail,
+} from "../repositories/experienceRepository.js"
 
 export function recordExperience(input: {
   activity_id: number
@@ -32,4 +36,14 @@ export function findExperienceForActivity(
   activityId: number
 ): Experience | undefined {
   return getExperienceForActivity(activityId)
+}
+
+export function listExperiencesForUser(
+  userId: number
+): ExperienceWithTrail[] {
+  if (userId <= 0) {
+    throw new Error("Invalid user ID")
+  }
+
+  return getExperiencesForUser(userId)
 }

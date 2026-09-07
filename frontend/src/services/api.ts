@@ -52,6 +52,33 @@ export interface PreferenceInsight {
   message: string
 }
 
+export interface Activity {
+  id: number
+  user_id: number
+  trail_id: number
+  started_at: string | null
+  ended_at: string | null
+  distance_miles: number | null
+  elevation_gain_feet: number | null
+  duration_seconds: number | null
+  created_at: string
+
+  trail: {
+    id: number
+    name: string
+    location: string | null
+  }
+
+  experience: {
+    id: number
+    overall_rating: number
+    scenic_rating: number | null
+    difficulty_rating: number | null
+    solitude_rating: number | null
+    notes: string | null
+  } | null
+}
+
 export async function getPreferenceInsights(
   userId: number
 ): Promise<PreferenceInsight[]> {
@@ -218,6 +245,20 @@ export async function createActivity(input: {
 
   if (!response.ok) {
     throw new Error("Failed to create activity")
+  }
+
+  return response.json()
+}
+
+export async function getActivities(
+  userId: number
+): Promise<Activity[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/${userId}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch activities")
   }
 
   return response.json()

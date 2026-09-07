@@ -3,7 +3,10 @@ import {
   getActivitiesForUser,
 } from "../repositories/activityRepository.js"
 
-import type { Activity } from "../repositories/activityRepository.js"
+import type {
+  Activity,
+  ActivityWithTrail,
+} from "../repositories/activityRepository.js"
 
 export function recordActivity(input: {
   user_id: number
@@ -27,6 +30,6 @@ export function recordActivity(input: {
 
 export function listActivitiesForUser(
   userId: number
-): Activity[] {
+): ActivityWithTrail[] {
   return getActivitiesForUser(userId)
 }

@@ -4,13 +4,17 @@ import Compare from "./pages/Compare"
 import AddHike from "./pages/AddHike"
 import HikeDNA from "./pages/HikeDNA"
 import TrailDetail from "./pages/TrailDetail"
+import Home from "./pages/Home"
+import Activities from "./pages/Activities"
 
 function App() {
   const path = window.location.pathname
 
   let page
 
-  if (path.startsWith("/trails/")) {
+  if (path === "/") {
+    page = <Home />
+  } else if (path.startsWith("/trails/")) {
     page = <TrailDetail />
   } else if (path === "/compare") {
     page = <Compare />
@@ -18,6 +22,8 @@ function App() {
     page = <AddHike />
   } else if (path === "/hike-dna") {
     page = <HikeDNA />
+  }  else if (path === "/activities") {
+  page = <Activities />
   } else {
     page = <Rankings />
   }

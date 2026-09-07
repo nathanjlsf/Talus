@@ -17,7 +17,7 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
   const matchScore = Math.round(score)
 
   return (
-    <article 
+    <article
       onClick={() => {
         window.location.href = `/trails/${trail.id}`
       }}
@@ -41,7 +41,7 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
             )}
           </div>
 
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <p className="text-2xl font-semibold text-[#314936]">
               {matchScore}%
             </p>
@@ -67,7 +67,7 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
 
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.15em] text-[#687565]">
-                Why this trail
+                Why Talus recommends it
               </p>
 
               <div className="mt-1 space-y-1">
@@ -98,6 +98,10 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
             {trail.difficulty}
           </span>
         </div>
+
+        <p className="mt-5 text-sm font-medium text-[#314936]">
+          View trail →
+        </p>
       </div>
     </article>
   )
