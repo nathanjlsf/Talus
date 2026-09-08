@@ -65,6 +65,8 @@ function AddHike() {
     (trail) => trail.id === Number(trailId)
   )
 
+  const isContextual = Boolean(selectedTrail)
+
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault()
 
@@ -136,15 +138,19 @@ function AddHike() {
     <section className="mx-auto max-w-3xl">
       <div>
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-          Hiking history
+          {isContextual ? "Hiking reflection" : "Hiking history"}
         </p>
 
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          Add a hike
+          {selectedTrail
+            ? `How was ${selectedTrail.name}?`
+            : "Add a hike"}
         </h1>
 
         <p className="mt-4 max-w-xl text-lg leading-8 text-[#687565]">
-          Tell Talus about a trail you’ve experienced.
+          {selectedTrail
+            ? "Tell Talus what you noticed. Your feedback helps it understand what makes a great hike for you."
+            : "Tell Talus about a trail you've experienced. Your feedback helps improve future recommendations."}
         </p>
       </div>
 
@@ -152,39 +158,41 @@ function AddHike() {
         onSubmit={handleSubmit}
         className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8 md:p-10"
       >
-        <div>
-          <label
-            htmlFor="trail"
-            className="text-sm font-medium text-[#314936]"
-          >
-            Trail
-          </label>
+        {!selectedTrail && (
+          <div>
+            <label
+              htmlFor="trail"
+              className="text-sm font-medium text-[#314936]"
+            >
+              Trail
+            </label>
 
-          <select
-            id="trail"
-            value={trailId}
-            onChange={(event) =>
-              setTrailId(event.target.value)
-            }
-            className="mt-2 w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition focus:border-[#314936]"
-          >
-            <option value="">
-              Select a trail...
-            </option>
-
-            {trails.map((item) => (
-              <option
-                key={item.id}
-                value={item.id}
-              >
-                {item.name}
+            <select
+              id="trail"
+              value={trailId}
+              onChange={(event) =>
+                setTrailId(event.target.value)
+              }
+              className="mt-2 w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition focus:border-[#314936]"
+            >
+              <option value="">
+                Select a trail...
               </option>
-            ))}
-          </select>
-        </div>
+
+              {trails.map((item) => (
+                <option
+                  key={item.id}
+                  value={item.id}
+                >
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {selectedTrail && (
-          <div className="mt-5 rounded-2xl bg-[#e1dccf] p-5">
+          <div className="rounded-2xl bg-[#e1dccf] p-5">
             <div className="flex items-start gap-3">
               <Mountain
                 size={20}
@@ -208,41 +216,67 @@ function AddHike() {
         )}
 
         <div className="mt-10">
-          <Rating
-            label="Overall"
-            value={overallRating}
-            onChange={setOverallRating}
-            required
-          />
+          <div>
+            <h2 className="text-xl font-semibold">
+              How was the hike overall?
+            </h2>
+
+            <p className="mt-1 text-sm text-[#687565]">
+              Your overall experience is the most important signal.
+            </p>
+          </div>
+
+          <div className="mt-5">
+            <Rating
+              label="Overall"
+              value={overallRating}
+              onChange={setOverallRating}
+              required
+            />
+          </div>
         </div>
 
-        <div className="mt-8 grid gap-8 md:grid-cols-3">
-          <Rating
-            label="Scenery"
-            value={scenicRating}
-            onChange={setScenicRating}
-          />
+        <div className="mt-10 border-t border-[#d8d2c4] pt-8">
+          <h2 className="text-xl font-semibold">
+            What stood out?
+          </h2>
 
-          <Rating
-            label="Difficulty"
-            value={difficultyRating}
-            onChange={setDifficultyRating}
-          />
+          <p className="mt-1 text-sm text-[#687565]">
+            These details help Talus understand your preferences.
+          </p>
 
-          <Rating
-            label="Solitude"
-            value={solitudeRating}
-            onChange={setSolitudeRating}
-          />
+          <div className="mt-6 grid gap-8 md:grid-cols-3">
+            <Rating
+              label="Scenery"
+              value={scenicRating}
+              onChange={setScenicRating}
+            />
+
+            <Rating
+              label="Difficulty"
+              value={difficultyRating}
+              onChange={setDifficultyRating}
+            />
+
+            <Rating
+              label="Solitude"
+              value={solitudeRating}
+              onChange={setSolitudeRating}
+            />
+          </div>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-10 border-t border-[#d8d2c4] pt-8">
           <label
             htmlFor="notes"
-            className="text-sm font-medium text-[#314936]"
+            className="text-xl font-semibold"
           >
-            Notes
+            Anything else?
           </label>
+
+          <p className="mt-1 text-sm text-[#687565]">
+            A few words about what you enjoyed—or didn't.
+          </p>
 
           <textarea
             id="notes"
@@ -252,7 +286,7 @@ function AddHike() {
             }
             placeholder="What stood out about this hike?"
             rows={5}
-            className="mt-2 w-full resize-none rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none placeholder:text-[#8b8f83] focus:border-[#314936]"
+            className="mt-4 w-full resize-none rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none placeholder:text-[#8b8f83] focus:border-[#314936]"
           />
         </div>
 

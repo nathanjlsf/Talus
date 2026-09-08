@@ -105,83 +105,142 @@ function HikeDNA() {
         </h1>
 
         <p className="mt-4 text-lg leading-8 text-[#687565]">
-          A picture of what makes a great hike for you,
-          based on the choices you’ve made so far.
+          Talus learns what makes a great hike for you
+          from the trails you choose and the experiences
+          you share.
         </p>
       </div>
 
       {preferences.length === 0 ? (
         <div className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8">
-          <Mountain size={28} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#314936] text-white">
+            <Mountain size={24} />
+          </div>
 
-          <h2 className="mt-5 text-2xl font-semibold">
+          <h2 className="mt-6 text-2xl font-semibold">
             Your Hike DNA is still forming.
           </h2>
 
           <p className="mt-3 max-w-xl leading-7 text-[#687565]">
-            Compare a few trails and Talus will start
-            learning the characteristics you prefer.
+            Compare a few trails or log some hikes.
+            Talus will start learning the characteristics
+            that matter most to you.
           </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/compare"
+            }}
+            className="mt-6 rounded-full bg-[#314936] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#263b2b]"
+          >
+            Compare trails
+          </button>
         </div>
       ) : (
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {preferences.map((preference) => {
-            const info =
-              attributeInfo[
-                preference.attribute as keyof typeof attributeInfo
-              ]
+        <>
+          <div className="mt-10">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
+                Your hiking profile
+              </p>
 
-            if (!info) {
-              return null
-            }
+              <h2 className="mt-2 text-2xl font-semibold">
+                What you tend to look for
+              </h2>
+            </div>
 
-            const Icon = info.icon
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              {preferences.map((preference) => {
+                const info =
+                  attributeInfo[
+                    preference.attribute as keyof typeof attributeInfo
+                  ]
 
-            return (
-              <PreferenceCard
-                key={preference.attribute}
-                preference={preference}
-                label={info.label}
-                description={info.description}
-                icon={Icon}
-              />
-            )
-          })}
-        </div>
-      )}
+                if (!info) {
+                  return null
+                }
 
-      {insights.length > 0 && (
-        <div className="mt-10">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-              What Talus has learned
-            </p>
-
-            <div className="mt-4 grid gap-3">
-              {insights.map((insight) => {
-                const indicator =
-                  insight.direction === "high"
-                    ? "↑"
-                    : insight.direction === "low"
-                      ? "↓"
-                      : "•"
+                const Icon = info.icon
 
                 return (
-                  <div
-                    key={insight.attribute}
-                    className="flex items-center gap-4 rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#314936] text-lg font-semibold text-white">
-                      {indicator}
-                    </div>
-
-                    <p className="leading-7 text-[#26352a]">
-                      {insight.message}
-                    </p>
-                </div>
+                  <PreferenceCard
+                    key={preference.attribute}
+                    preference={preference}
+                    label={info.label}
+                    description={info.description}
+                    icon={Icon}
+                  />
                 )
               })}
             </div>
-        </div>
+          </div>
+
+          {insights.length > 0 && (
+            <div className="mt-12">
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
+                What Talus has learned
+              </p>
+
+              <h2 className="mt-2 text-2xl font-semibold">
+                Your hiking tendencies
+              </h2>
+
+              <div className="mt-5 grid gap-3">
+                {insights.map((insight) => {
+                  const indicator =
+                    insight.direction === "high"
+                      ? "↑"
+                      : insight.direction === "low"
+                        ? "↓"
+                        : "•"
+
+                  return (
+                    <div
+                      key={insight.attribute}
+                      className="flex items-start gap-4 rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#314936] text-lg font-semibold text-white">
+                        {indicator}
+                      </div>
+
+                      <p className="leading-7 text-[#26352a]">
+                        {insight.message}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-12 rounded-3xl border border-[#d8d2c4] bg-[#314936] p-7 text-white">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#d8dfd5]">
+              Keep exploring
+            </p>
+
+            <h2 className="mt-2 text-2xl font-semibold">
+              Your Hike DNA gets better with every hike.
+            </h2>
+
+            <p className="mt-2 max-w-2xl leading-7 text-[#d8dfd5]">
+              Keep comparing trails and sharing your
+              experiences. Talus will use what it learns
+              to make your next recommendations more
+              personal.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/trails"
+              }}
+              className="mt-5 rounded-xl bg-[#f3efe4] px-5 py-3 font-medium text-[#26352a] transition hover:bg-white"
+            >
+              Discover your next hike
+            </button>
+          </div>
+        </>
       )}
     </section>
   )
@@ -207,7 +266,7 @@ function PreferenceCard({
 
   return (
     <article className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-[#314936] p-3 text-white">
             <Icon size={19} />
@@ -224,7 +283,7 @@ function PreferenceCard({
           </div>
         </div>
 
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <span className="text-2xl font-semibold">
             {score}
           </span>
@@ -235,7 +294,7 @@ function PreferenceCard({
         </div>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
         <div
           className="h-full rounded-full bg-[#314936]"
           style={{
@@ -246,7 +305,10 @@ function PreferenceCard({
 
       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.15em] text-[#8a9184]">
         <span>Preference strength</span>
-        <span>{confidence}% confidence</span>
+
+        <span>
+          {confidence}% confidence
+        </span>
       </div>
     </article>
   )
