@@ -10,13 +10,13 @@ interface PreferenceInsight {
 }
 
 const labels: Record<string, string> = {
-  scenic: "scenic views",
-  forest: "forest",
-  coastal: "coastal trails",
-  solitude: "solitude",
+  distance: "hike distance",
+  elevation: "elevation gain",
   difficulty: "difficulty",
-  distance: "longer hikes",
-  elevation: "elevation",
+  terrain: "terrain",
+  scenic: "scenic views",
+  nature: "nature",
+  solitude: "solitude",
 }
 
 export function generatePreferenceInsights(

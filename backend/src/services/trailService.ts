@@ -20,12 +20,14 @@ export function addTrail(input: {
   location?: string
   description?: string
   distance_miles: number
+  estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  terrain: string
   scenic_score?: number
-  forest_score?: number
-  coastal_score?: number
+  nature_score?: number
   solitude_score?: number
+  water_score?: number
 }): Trail {
   return createTrail(input)
 }

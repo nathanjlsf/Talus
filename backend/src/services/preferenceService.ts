@@ -39,7 +39,11 @@ export function recordComparison(comparison: {
   winner_trail_id: number
   loser_trail_id: number
 }) {
-  return createComparison(comparison)
+  const result = createComparison(comparison)
+
+  updateUserPreferences(comparison.user_id)
+
+  return result
 }
 
 export function calculateUserPreferences(
@@ -105,57 +109,86 @@ export function calculateCombinedPreferences(
   const experienceResult =
     calculateUserExperienceSignal(userId)
 
+  const comparisons =
+    getComparisonsForUser(userId)
+
   return pairwisePreferences.map(
     (preference) => {
       const attribute =
         preference.attribute
 
+      const experienceEvidence =
+        experienceResult.evidence[attribute]
+
+      const pairwiseEvidence =
+        comparisons.length
+
       if (
-        !(
-          attribute === "scenic" ||
-          attribute === "forest" ||
-          attribute === "coastal" ||
-          attribute === "solitude"
-        )
+        pairwiseEvidence === 0 &&
+        experienceEvidence === 0
       ) {
         return preference
       }
 
-      const experienceEvidence =
-        experienceResult.evidence[attribute]
-
-      if (experienceEvidence === 0) {
-        return preference
-      }
+      const experienceSignal =
+        experienceResult.signal[attribute]
 
       const experienceScore =
         50 +
-        experienceResult.signal[attribute] * 50
+        experienceSignal * 50
 
-      const combinedScore =
-        preference.score * 0.7 +
-        experienceScore * 0.3
-
-      const pairwiseConfidence =
-        preference.confidence
-
-      const experienceConfidence =
-        Math.min(
-          1,
-          experienceEvidence / 5
+      const pairwiseStrength =
+        1 -
+        Math.exp(
+          -pairwiseEvidence / 4
         )
 
-      const combinedConfidence = Number(
+      const experienceStrength =
+        1 -
+        Math.exp(
+          -experienceEvidence / 4
+        )
+
+      const totalStrength =
+        pairwiseStrength +
+        experienceStrength
+
+      if (totalStrength === 0) {
+        return preference
+      }
+
+      const combinedScore =
         (
-          pairwiseConfidence * 0.7 +
-          experienceConfidence * 0.3
-        ).toFixed(2)  
-      )
+          preference.score *
+            pairwiseStrength +
+          experienceScore *
+            experienceStrength
+        ) / totalStrength
+
+      const combinedConfidence =
+        Math.min(
+          0.9,
+          1 -
+            Math.exp(
+              -(
+                pairwiseEvidence +
+                experienceEvidence
+              ) / 5
+            )
+        )
 
       return {
-        attribute: preference.attribute,
-        score: combinedScore,
-        confidence: combinedConfidence,
+        attribute,
+        score: Math.max(
+          10,
+          Math.min(
+            90,
+            combinedScore
+          )
+        ),
+        confidence: Number(
+          combinedConfidence.toFixed(2)
+        ),
       }
     }
   )

@@ -108,10 +108,23 @@ function Home() {
             </div>
           </div>
 
-          <p className="mt-6 max-w-2xl leading-7 text-[#526052]">
-            {topTrail.explanations[0]?.message ??
-              "This trail is currently your strongest match based on what Talus has learned about you."}
-          </p>
+          <div className="mt-6 space-y-2">
+            {topTrail.explanations.length > 0 ? (
+              topTrail.explanations.map((explanation) => (
+                <p
+                  key={explanation.attribute}
+                  className="max-w-2xl leading-7 text-[#526052]"
+                >
+                  {explanation.message}
+                </p>
+              ))
+            ) : (
+              <p className="max-w-2xl leading-7 text-[#526052]">
+                This trail is currently your strongest match based on what Talus
+                has learned about you.
+              </p>
+            )}
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-5 text-sm text-[#687565]">
             <span>{topTrail.trail.distance_miles} mi</span>

@@ -11,16 +11,15 @@ CREATE TABLE IF NOT EXISTS trails (
     name TEXT NOT NULL,
     location TEXT,
     description TEXT,
-
     distance_miles REAL NOT NULL,
+    estimated_time_minutes INTEGER NOT NULL,
     elevation_gain_feet INTEGER NOT NULL,
     difficulty TEXT NOT NULL,
-
+    terrain TEXT NOT NULL,
     scenic_score REAL,
-    forest_score REAL,
-    coastal_score REAL,
+    nature_score REAL,
     solitude_score REAL,
-
+    water_score REAL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

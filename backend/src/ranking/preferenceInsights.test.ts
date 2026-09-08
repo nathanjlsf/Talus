@@ -9,7 +9,7 @@ describe("generatePreferenceInsights", () => {
     const insights =
       generatePreferenceInsights([
         {
-          attribute: "coastal",
+          attribute: "scenic",
           score: 80,
           confidence: 1,
         },
@@ -18,7 +18,7 @@ describe("generatePreferenceInsights", () => {
     expect(insights[0]!.direction).toBe("high")
 
     expect(insights[0]!.message).toBe(
-      "You tend to prefer coastal trails."
+      "You tend to prefer scenic views."
     )
   })
 
@@ -26,7 +26,7 @@ describe("generatePreferenceInsights", () => {
     const insights =
       generatePreferenceInsights([
         {
-          attribute: "forest",
+          attribute: "nature",
           score: 20,
           confidence: 1,
         },

@@ -1,17 +1,8 @@
+import type { Trail } from "../repositories/trailRepository.js"
 import type {
   PreferenceAttribute,
   UserPreference,
 } from "./preferenceTypes.js"
-
-interface TrailAttributes {
-  distance_miles: number
-  elevation_gain_feet: number
-  difficulty: string
-  terrain: string | null
-  scenic_score: number | null
-  nature_score: number | null
-  solitude_score: number | null
-}
 
 const LEARNED_ATTRIBUTES: PreferenceAttribute[] = [
   "distance",
@@ -85,7 +76,7 @@ function normalizeElevation(
 }
 
 function getAttributeValue(
-  trail: TrailAttributes,
+  trail: Trail,
   attribute: PreferenceAttribute
 ): number | null {
   switch (attribute) {
@@ -123,59 +114,44 @@ function getAttributeValue(
   }
 }
 
-export function calculatePersonalizedScore(
-  trail: TrailAttributes,
+export function calculatePairInformation(
+  first: Trail,
+  second: Trail,
   preferences: UserPreference[]
 ): number {
-  let weightedScore = 0
-  let totalWeight = 0
+  let information = 0
 
-  for (const attribute of LEARNED_ATTRIBUTES) {
-    const trailValue = getAttributeValue(
-      trail,
-      attribute
-    )
+  for (const preference of preferences) {
+    const firstValue =
+      getAttributeValue(
+        first,
+        preference.attribute
+      )
 
-    const preference = preferences.find(
-      (item) => item.attribute === attribute
-    )
+    const secondValue =
+      getAttributeValue(
+        second,
+        preference.attribute
+      )
 
     if (
-      trailValue === null ||
-      !preference
+      firstValue === null ||
+      secondValue === null
     ) {
       continue
     }
 
-    const preferenceStrength =
-      (preference.score - 50) / 50
+    const difference =
+      Math.abs(
+        firstValue - secondValue
+      )
 
-    const trailSignal =
-      (trailValue - 0.5) / 0.5
+    const uncertainty =
+      1 - preference.confidence
 
-    const weight =
-      Math.abs(preferenceStrength) *
-      preference.confidence
-
-    const contribution =
-      trailSignal *
-      preferenceStrength *
-      preference.confidence
-
-    weightedScore += contribution
-    totalWeight += weight
+    information +=
+      difference * uncertainty
   }
 
-  if (totalWeight === 0) {
-    return 50
-  }
-
-  const normalizedScore =
-    50 +
-    (weightedScore / totalWeight) * 50
-
-  return Math.max(
-    0,
-    Math.min(100, normalizedScore)
-  )
+  return information
 }

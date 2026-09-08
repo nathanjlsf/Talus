@@ -6,8 +6,14 @@ export interface Trail {
   location: string | null
   description: string | null
   distance_miles: number
+  estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  terrain: string
+  scenic_score: number | null
+  nature_score: number | null
+  solitude_score: number | null
+  water_score: number | null
 }
 
 export interface RecommendationExplanation {
@@ -24,8 +30,14 @@ export interface RankedTrail {
     location: string | null
     description: string | null
     distance_miles: number
+    estimated_time_minutes: number
     elevation_gain_feet: number
     difficulty: string
+    terrain: string
+    scenic_score: number | null
+    nature_score: number | null
+    solitude_score: number | null
+    water_score: number | null
   }
   score: number
   explanations: RecommendationExplanation[]
@@ -33,13 +45,13 @@ export interface RankedTrail {
 
 export interface UserPreference {
   attribute:
-    | "scenic"
-    | "forest"
-    | "coastal"
-    | "solitude"
-    | "difficulty"
     | "distance"
     | "elevation"
+    | "difficulty"
+    | "terrain"
+    | "scenic"
+    | "nature"
+    | "solitude"
 
   score: number
   confidence: number
@@ -77,6 +89,11 @@ export interface Activity {
     solitude_rating: number | null
     notes: string | null
   } | null
+}
+
+export interface ComparisonPair {
+  firstTrail: RankedTrail["trail"]
+  secondTrail: RankedTrail["trail"]
 }
 
 export async function getPreferenceInsights(
@@ -286,4 +303,20 @@ export async function createExperience(input: {
   if (!response.ok) {
     throw new Error("Failed to create experience")
   }
+}
+
+export async function getNextComparison(
+  userId: number
+): Promise<ComparisonPair> {
+  const response = await fetch(
+    `${API_BASE_URL}/comparisons/next/${userId}`
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      "Unable to load next comparison"
+    )
+  }
+
+  return response.json()
 }

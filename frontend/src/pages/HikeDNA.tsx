@@ -2,9 +2,11 @@ import { useEffect, useState } from "react"
 import {
   Compass,
   Mountain,
-  TreePine,
-  Waves,
+  Route,
+  Footprints,
+  Trees,
   Eye,
+  UserRound,
 } from "lucide-react"
 
 import {
@@ -15,25 +17,40 @@ import {
 } from "../services/api"
 
 const attributeInfo = {
+  distance: {
+    label: "Distance",
+    description: "How far you tend to enjoy hiking.",
+    icon: Footprints,
+  },
+  elevation: {
+    label: "Elevation",
+    description: "How much climbing you tend to enjoy.",
+    icon: Mountain,
+  },
+  difficulty: {
+    label: "Difficulty",
+    description: "The level of challenge you tend to prefer.",
+    icon: Route,
+  },
+  terrain: {
+    label: "Terrain",
+    description: "The trail surfaces and terrain you tend to enjoy.",
+    icon: Compass,
+  },
   scenic: {
-    label: "Scenic",
-    description: "You value memorable views and scenery.",
+    label: "Scenery",
+    description: "How much you value memorable views and scenery.",
     icon: Eye,
   },
-  forest: {
-    label: "Forest",
-    description: "You enjoy wooded and forested trails.",
-    icon: TreePine,
-  },
-  coastal: {
-    label: "Coastal",
-    description: "You gravitate toward ocean and coastal views.",
-    icon: Waves,
+  nature: {
+    label: "Nature",
+    description: "How much you value immersive natural surroundings.",
+    icon: Trees,
   },
   solitude: {
     label: "Solitude",
-    description: "You prefer quieter trails with fewer people.",
-    icon: Compass,
+    description: "How much you prefer quieter trails.",
+    icon: UserRound,
   },
 } as const
 
@@ -264,6 +281,14 @@ function PreferenceCard({
     preference.confidence * 100
   )
 
+  let preferenceLabel = "No strong preference yet."
+
+  if (score >= 65) {
+    preferenceLabel = `You tend to prefer more ${label.toLowerCase()}.`
+  } else if (score <= 35) {
+    preferenceLabel = `You tend to prefer less ${label.toLowerCase()}.`
+  }
+
   return (
     <article className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7">
       <div className="flex items-start justify-between gap-4">
@@ -294,7 +319,11 @@ function PreferenceCard({
         </div>
       </div>
 
-      <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
+      <p className="mt-5 text-sm font-medium text-[#314936]">
+        {preferenceLabel}
+      </p>
+
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
         <div
           className="h-full rounded-full bg-[#314936]"
           style={{
@@ -304,10 +333,14 @@ function PreferenceCard({
       </div>
 
       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.15em] text-[#8a9184]">
-        <span>Preference strength</span>
+        <span>
+          {confidence}% learned
+        </span>
 
         <span>
-          {confidence}% confidence
+          {preference.confidence < 0.4
+            ? "Still learning"
+            : "Growing from your choices"}
         </span>
       </div>
     </article>

@@ -2,31 +2,63 @@ import { useEffect, useState } from "react"
 import { Mountain, TrendingUp } from "lucide-react"
 
 import {
-  getRanking,
+  getNextComparison,
   submitComparison,
   type RankedTrail,
 } from "../services/api"
 
-function Compare() {
-  const [trails, setTrails] = useState<RankedTrail[]>([])
-  const [leftTrail, setLeftTrail] = useState<RankedTrail | null>(null)
-  const [rightTrail, setRightTrail] = useState<RankedTrail | null>(null)
+const INITIAL_COMPARISONS = 5
 
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+function Compare() {
+  const [leftTrail, setLeftTrail] =
+    useState<RankedTrail | null>(null)
+
+  const [rightTrail, setRightTrail] =
+    useState<RankedTrail | null>(null)
+
+  const [comparisonCount, setComparisonCount] =
+    useState(0)
+
+  const [loading, setLoading] =
+    useState(true)
+
+  const [submitting, setSubmitting] =
+    useState(false)
+
+  const [error, setError] =
+    useState<string | null>(null)
+
+  const params =
+    new URLSearchParams(window.location.search)
+
+  const experienceType =
+    params.get("experience")
+
+  const isNewHiker =
+    experienceType === "new"
+
+  const isExperiencedHiker =
+    experienceType === "experienced"
 
   useEffect(() => {
-    async function loadTrails() {
+    async function loadComparison() {
       try {
-        const ranking = await getRanking(1)
+        const comparison =
+          await getNextComparison(1)
 
-        setTrails(ranking)
+        setLeftTrail({
+          rank: 0,
+          trail: comparison.firstTrail,
+          score: 0,
+          explanations: [],
+        })
 
-        if (ranking.length >= 2) {
-          setLeftTrail(ranking[0])
-          setRightTrail(ranking[1])
-        }
+        setRightTrail({
+          rank: 0,
+          trail: comparison.secondTrail,
+          score: 0,
+          explanations: [],
+        })
       } catch (error) {
         setError(
           error instanceof Error
@@ -38,7 +70,7 @@ function Compare() {
       }
     }
 
-    loadTrails()
+    loadComparison()
   }, [])
 
   async function chooseWinner(
@@ -55,24 +87,37 @@ function Compare() {
         loser.trail.id
       )
 
-      const remainingTrails = trails.filter(
-        (item) =>
-          item.trail.id !== winner.trail.id &&
-          item.trail.id !== loser.trail.id
+      const nextComparisonCount =
+        comparisonCount + 1
+
+      setComparisonCount(
+        nextComparisonCount
       )
 
-      if (remainingTrails.length > 0) {
-        const nextTrail = remainingTrails[0]
-
-        setLeftTrail(winner)
-        setRightTrail(nextTrail)
-      } else {
+      if (
+        nextComparisonCount >=
+        INITIAL_COMPARISONS
+      ) {
         setLeftTrail(null)
         setRightTrail(null)
+        return
       }
 
-      setTrails((currentTrails) => {
-        return currentTrails
+      const comparison =
+        await getNextComparison(1)
+
+      setLeftTrail({
+        rank: 0,
+        trail: comparison.firstTrail,
+        score: 0,
+        explanations: [],
+      })
+
+      setRightTrail({
+        rank: 0,
+        trail: comparison.secondTrail,
+        score: 0,
+        explanations: [],
       })
     } catch (error) {
       setError(
@@ -89,7 +134,7 @@ function Compare() {
     return (
       <section>
         <p className="text-[#687565]">
-          Loading trails...
+          Learning what you like...
         </p>
       </section>
     )
@@ -108,37 +153,95 @@ function Compare() {
   if (!leftTrail || !rightTrail) {
     return (
       <section>
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-          Preference engine
-        </p>
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
+            {isNewHiker
+              ? "Your first hike"
+              : "Preference engine"}
+          </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          You’re all caught up.
-        </h1>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+            {isNewHiker
+              ? "Your first hiking style is taking shape."
+              : "Your hiking style is taking shape."}
+          </h1>
 
-        <p className="mt-4 max-w-xl text-lg leading-8 text-[#687565]">
-          You’ve compared all of the available trails.
-          Check your rankings to see what Talus has learned.
-        </p>
+          <p className="mt-4 text-lg leading-8 text-[#687565]">
+            {isNewHiker
+              ? "Talus has a better idea of what sounds appealing to you. Let's use that to find a great first hike."
+              : "Talus has learned a little more about what you like. Keep exploring to make your recommendations even better."}
+          </p>
+
+          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href =
+                  "/hike-dna"
+              }}
+              className="rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b]"
+            >
+              See my Hike DNA
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href =
+                  "/trails"
+              }}
+              className="rounded-full border border-[#b9b6aa] bg-[#f3efe4] px-6 py-3 font-medium text-[#314936] transition hover:border-[#314936]"
+            >
+              Discover trails
+            </button>
+          </div>
+        </div>
       </section>
     )
   }
 
   return (
     <section>
-      <div className="text-center">
+      <div className="mx-auto max-w-3xl text-center">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-          Preference engine
+          {isNewHiker
+            ? "Finding your first hike"
+            : isExperiencedHiker
+              ? "Let's get to know your hiking style"
+              : "Preference engine"}
         </p>
 
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          Which hike would you rather take?
+          {isNewHiker
+            ? "What sounds like a good first hike?"
+            : "Which hike would you rather take?"}
         </h1>
 
         <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-[#687565]">
-          Choose the trail you prefer. Talus will use your
-          choices to learn what makes a great hike for you.
+          {isNewHiker
+            ? "Choose the trail that sounds more appealing. There are no wrong answers — Talus will use your choices to find a good fit."
+            : "Choose the trail you prefer. There are no wrong answers — Talus will use your choices to learn what makes a great hike for you."}
         </p>
+
+        <div className="mt-6">
+          <div className="mx-auto h-1.5 max-w-xs overflow-hidden rounded-full bg-[#d8d2c4]">
+            <div
+              className="h-full rounded-full bg-[#314936] transition-all"
+              style={{
+                width: `${
+                  (comparisonCount /
+                    INITIAL_COMPARISONS) *
+                  100
+                }%`,
+              }}
+            />
+          </div>
+
+          <p className="mt-2 text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+            {comparisonCount} of{" "}
+            {INITIAL_COMPARISONS} comparisons
+          </p>
+        </div>
       </div>
 
       {error && (
@@ -152,7 +255,10 @@ function Compare() {
           trail={leftTrail}
           disabled={submitting}
           onChoose={() =>
-            chooseWinner(leftTrail, rightTrail)
+            chooseWinner(
+              leftTrail,
+              rightTrail
+            )
           }
         />
 
@@ -160,14 +266,17 @@ function Compare() {
           trail={rightTrail}
           disabled={submitting}
           onChoose={() =>
-            chooseWinner(rightTrail, leftTrail)
+            chooseWinner(
+              rightTrail,
+              leftTrail
+            )
           }
         />
       </div>
 
       <p className="mt-8 text-center text-sm text-[#687565]">
         {submitting
-          ? "Saving your preference..."
+          ? "Learning from your choice..."
           : "There are no wrong answers."}
       </p>
     </section>
@@ -226,7 +335,8 @@ function TrailChoice({
         </span>
 
         <span>
-          {trail.trail.elevation_gain_feet.toLocaleString()} ft elevation
+          {trail.trail.elevation_gain_feet.toLocaleString()}{" "}
+          ft elevation
         </span>
 
         <span>

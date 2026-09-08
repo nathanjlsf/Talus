@@ -14,9 +14,12 @@ export interface Experience {
 export interface ExperienceWithTrail extends Experience {
   trail: {
     id: number
+    distance_miles: number
+    elevation_gain_feet: number
+    difficulty: string
+    terrain: string | null
     scenic_score: number | null
-    forest_score: number | null
-    coastal_score: number | null
+    nature_score: number | null
     solitude_score: number | null
   }
 }
@@ -93,9 +96,12 @@ export function getExperiencesForUser(
         experiences.notes,
         experiences.created_at,
         trails.id AS trail_id,
+        trails.distance_miles,
+        trails.elevation_gain_feet,
+        trails.difficulty,
+        trails.terrain,
         trails.scenic_score,
-        trails.forest_score,
-        trails.coastal_score,
+        trails.nature_score,
         trails.solitude_score
       FROM experiences
       JOIN activities
@@ -109,9 +115,12 @@ export function getExperiencesForUser(
     .all(userId) as Array<
       Experience & {
         trail_id: number
+        distance_miles: number
+        elevation_gain_feet: number
+        difficulty: string
+        terrain: string | null
         scenic_score: number | null
-        forest_score: number | null
-        coastal_score: number | null
+        nature_score: number | null
         solitude_score: number | null
       }
     >
@@ -127,9 +136,13 @@ export function getExperiencesForUser(
     created_at: experience.created_at,
     trail: {
       id: experience.trail_id,
+      distance_miles: experience.distance_miles,
+      elevation_gain_feet:
+        experience.elevation_gain_feet,
+      difficulty: experience.difficulty,
+      terrain: experience.terrain,
       scenic_score: experience.scenic_score,
-      forest_score: experience.forest_score,
-      coastal_score: experience.coastal_score,
+      nature_score: experience.nature_score,
       solitude_score: experience.solitude_score,
     },
   }))

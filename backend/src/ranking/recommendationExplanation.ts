@@ -1,9 +1,12 @@
 import type { UserPreference } from "./preferenceTypes.js"
 
 interface TrailAttributes {
+  distance_miles: number
+  elevation_gain_feet: number
+  difficulty: string
+  terrain: string | null
   scenic_score: number | null
-  forest_score: number | null
-  coastal_score: number | null
+  nature_score: number | null
   solitude_score: number | null
 }
 
@@ -17,13 +20,74 @@ const labels: Record<
   UserPreference["attribute"],
   string
 > = {
-  scenic: "scenic views",
-  forest: "forest",
-  coastal: "coastal views",
-  solitude: "solitude",
+  distance: "distance",
+  elevation: "elevation gain",
   difficulty: "difficulty",
-  distance: "longer hikes",
-  elevation: "elevation",
+  terrain: "terrain",
+  scenic: "scenery",
+  nature: "natural surroundings",
+  solitude: "solitude",
+}
+
+function normalizeDifficulty(
+  difficulty: string
+): number | null {
+  switch (difficulty.toLowerCase()) {
+    case "easy":
+      return 0
+
+    case "moderate":
+      return 0.5
+
+    case "hard":
+      return 1
+
+    default:
+      return null
+  }
+}
+
+function normalizeTerrain(
+  terrain: string | null
+): number | null {
+  if (!terrain) {
+    return null
+  }
+
+  switch (terrain.toLowerCase()) {
+    case "paved":
+      return 0
+
+    case "dirt":
+      return 0.5
+
+    case "mixed":
+      return 0.75
+
+    case "rocky":
+      return 1
+
+    default:
+      return null
+  }
+}
+
+function normalizeDistance(
+  distance: number
+): number {
+  return Math.max(
+    0,
+    Math.min(1, distance / 10)
+  )
+}
+
+function normalizeElevation(
+  elevation: number
+): number {
+  return Math.max(
+    0,
+    Math.min(1, elevation / 2000)
+  )
 }
 
 function getTrailValue(
@@ -31,14 +95,31 @@ function getTrailValue(
   attribute: UserPreference["attribute"]
 ): number | null {
   switch (attribute) {
+    case "distance":
+      return normalizeDistance(
+        trail.distance_miles
+      )
+
+    case "elevation":
+      return normalizeElevation(
+        trail.elevation_gain_feet
+      )
+
+    case "difficulty":
+      return normalizeDifficulty(
+        trail.difficulty
+      )
+
+    case "terrain":
+      return normalizeTerrain(
+        trail.terrain
+      )
+
     case "scenic":
       return trail.scenic_score
 
-    case "forest":
-      return trail.forest_score
-
-    case "coastal":
-      return trail.coastal_score
+    case "nature":
+      return trail.nature_score
 
     case "solitude":
       return trail.solitude_score
@@ -97,8 +178,8 @@ export function generateRecommendationExplanations(
           : "negative",
       message:
         contribution > 0
-          ? `Strong match: this trail's ${label} align with your preferences.`
-          : `Potential mismatch: this trail's ${label} may be less aligned with your preferences.`,
+          ? `Strong match: this trail's ${label} fit what Talus has learned you prefer.`
+          : `Potential mismatch: this trail's ${label} difffer from what Talus has learned you prefer.`,
       contribution: Math.abs(contribution),
     })
   }

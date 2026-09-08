@@ -6,12 +6,14 @@ export interface Trail {
   location: string | null
   description: string | null
   distance_miles: number
+  estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  terrain: string
   scenic_score: number | null
-  forest_score: number | null
-  coastal_score: number | null
+  nature_score: number | null
   solitude_score: number | null
+  water_score: number | null
   created_at: string
 }
 
@@ -99,12 +101,14 @@ export function createTrail(trail: {
   location?: string
   description?: string
   distance_miles: number
+  estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  terrain: string
   scenic_score?: number
-  forest_score?: number
-  coastal_score?: number
+  nature_score?: number
   solitude_score?: number
+  water_score?: number
 }): Trail {
   const statement = db.prepare(
     `
@@ -113,14 +117,16 @@ export function createTrail(trail: {
       location,
       description,
       distance_miles,
+      estimated_time_minutes,
       elevation_gain_feet,
       difficulty,
+      terrain,
       scenic_score,
-      forest_score,
-      coastal_score,
-      solitude_score
+      nature_score,
+      solitude_score,
+      water_score
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
 
@@ -129,12 +135,14 @@ export function createTrail(trail: {
     trail.location ?? null,
     trail.description ?? null,
     trail.distance_miles,
+    trail.estimated_time_minutes,
     trail.elevation_gain_feet,
     trail.difficulty,
+    trail.terrain,
     trail.scenic_score ?? null,
-    trail.forest_score ?? null,
-    trail.coastal_score ?? null,
-    trail.solitude_score ?? null
+    trail.nature_score ?? null,
+    trail.solitude_score ?? null,
+    trail.water_score ?? null
   )
 
   return getTrailById(Number(result.lastInsertRowid))!

@@ -33,14 +33,24 @@ function TrailResultCard({ trail }: TrailResultCardProps) {
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap gap-5 text-sm text-[#687565]">
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#687565]">
           <span>{trail.distance_miles} mi</span>
+
+          {trail.estimated_time_minutes !== null && (
+            <span>
+              {Math.round(trail.estimated_time_minutes / 60)} hr
+            </span>
+          )}
 
           <span>
             {trail.elevation_gain_feet.toLocaleString()} ft elevation
           </span>
 
           <span>{trail.difficulty}</span>
+
+          {trail.terrain && (
+            <span>{trail.terrain} terrain</span>
+          )}
         </div>
       </div>
     </article>
