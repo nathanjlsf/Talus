@@ -281,6 +281,20 @@ export async function getActivities(
   return response.json()
 }
 
+export async function getActivity(
+  activityId: number
+): Promise<Activity> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/id/${activityId}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch activity")
+  }
+
+  return response.json()
+}
+
 export async function createExperience(input: {
   activity_id: number
   overall_rating: number

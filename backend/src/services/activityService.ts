@@ -1,6 +1,7 @@
 import {
   createActivity,
   getActivitiesForUser,
+  getActivityWithTrailById,
 } from "../repositories/activityRepository.js"
 
 import type {
@@ -32,4 +33,14 @@ export function listActivitiesForUser(
   userId: number
 ): ActivityWithTrail[] {
   return getActivitiesForUser(userId)
+}
+
+export function findActivityById(
+  activityId: number
+) {
+  if (activityId <= 0) {
+    throw new Error("Invalid activity ID")
+  }
+
+  return getActivityWithTrailById(activityId)
 }

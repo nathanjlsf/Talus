@@ -142,6 +142,21 @@ function Activities() {
                 )}
               </div>
 
+              {!activity.experience && (
+                <div className="mt-6 border-t border-[#d8d2c4] pt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href =
+                        `/activities/${activity.id}/experience`
+                    }}
+                    className="rounded-full bg-[#314936] px-5 py-2.5 font-medium text-white transition hover:bg-[#263b2b]"
+                  >
+                    Tell Talus how it went
+                  </button>
+                </div>
+              )}
+
               {activity.experience && (
                 <div className="mt-6 border-t border-[#d8d2c4] pt-6">
                   <div className="flex items-center gap-3">

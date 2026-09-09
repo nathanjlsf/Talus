@@ -162,3 +162,59 @@ export function getActivityById(
     )
     .get(activityId) as Activity | undefined
 }
+
+export function getActivityWithTrailById(
+  activityId: number
+): ActivityWithTrail | undefined {
+  const row = db
+    .prepare(
+      `
+      SELECT
+        activities.id,
+        activities.user_id,
+        activities.trail_id,
+        activities.started_at,
+        activities.ended_at,
+        activities.distance_miles,
+        activities.elevation_gain_feet,
+        activities.duration_seconds,
+        activities.created_at,
+        trails.name AS trail_name,
+        trails.location AS trail_location
+      FROM activities
+      JOIN trails
+        ON trails.id = activities.trail_id
+      WHERE activities.id = ?
+      `
+    )
+    .get(activityId) as
+    | (Activity & {
+        trail_name: string
+        trail_location: string | null
+      })
+    | undefined
+
+  if (!row) {
+    return undefined
+  }
+
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    trail_id: row.trail_id,
+    started_at: row.started_at,
+    ended_at: row.ended_at,
+    distance_miles: row.distance_miles,
+    elevation_gain_feet: row.elevation_gain_feet,
+    duration_seconds: row.duration_seconds,
+    created_at: row.created_at,
+
+    trail: {
+      id: row.trail_id,
+      name: row.trail_name,
+      location: row.trail_location,
+    },
+
+    experience: null,
+  }
+}

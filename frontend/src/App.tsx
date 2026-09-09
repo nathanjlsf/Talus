@@ -7,6 +7,7 @@ import TrailDetail from "./pages/TrailDetail"
 import Home from "./pages/Home"
 import Activities from "./pages/Activities"
 import Onboarding from "./pages/Onboarding"
+import Experience from "./pages/Experience"
 
 function App() {
   const path = window.location.pathname
@@ -27,6 +28,8 @@ function App() {
     page = <HikeDNA />
   } else if (path === "/activities") {
     page = <Activities />
+  } else if (path.startsWith("/activities/") && path.endsWith("/experience")) {
+    page = <Experience />
   } else {
     page = <Rankings />
   }

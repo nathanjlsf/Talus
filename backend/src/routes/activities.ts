@@ -1,11 +1,36 @@
 import { Router } from "express"
 
 import {
+  findActivityById,
   listActivitiesForUser,
   recordActivity,
 } from "../services/activityService.js"
 
 const router = Router()
+
+router.get("/id/:activityId", (req, res) => {
+  const activityId = Number(req.params.activityId)
+
+  if (!Number.isInteger(activityId)) {
+    res.status(400).json({
+      error: "Invalid activity ID",
+    })
+
+    return
+  }
+
+  const activity = findActivityById(activityId)
+
+  if (!activity) {
+    res.status(404).json({
+      error: "Activity not found",
+    })
+
+    return
+  }
+
+  res.json(activity)
+})
 
 router.get("/:userId", (req, res) => {
   const userId = Number(req.params.userId)
