@@ -14,13 +14,43 @@ CREATE TABLE IF NOT EXISTS trails (
     distance_miles REAL NOT NULL,
     estimated_time_minutes INTEGER NOT NULL,
     elevation_gain_feet INTEGER NOT NULL,
+    elevation_status TEXT NOT NULL DEFAULT 'pending',
+    elevation_attempts INTEGER NOT NULL DEFAULT 0,
+    elevation_error TEXT,
     difficulty TEXT NOT NULL,
     terrain TEXT NOT NULL,
     scenic_score REAL,
     nature_score REAL,
     solitude_score REAL,
     water_score REAL,
+    source TEXT,
+    source_id TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS trail_geometry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trail_id INTEGER NOT NULL,
+    way_id INTEGER NOT NULL,
+    sequence INTEGER NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+
+    FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE,
+
+    UNIQUE(trail_id, way_id, sequence)
+);
+
+CREATE TABLE IF NOT EXISTS elevation_cache (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    elevation_feet REAL NOT NULL,
+
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE(latitude, longitude)
 );
 
 CREATE TABLE IF NOT EXISTS activities (

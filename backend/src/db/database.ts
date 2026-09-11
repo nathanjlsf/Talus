@@ -81,6 +81,36 @@ addColumnIfMissing(
   "REAL"
 )
 
+addColumnIfMissing(
+  "trails",
+  "source",
+  "TEXT"
+)
+
+addColumnIfMissing(
+  "trails",
+  "source_id",
+  "TEXT"
+)
+
+addColumnIfMissing(
+  "trails",
+  "elevation_status",
+  "TEXT NOT NULL DEFAULT 'pending'"
+)
+
+addColumnIfMissing(
+  "trails",
+  "elevation_attempts",
+  "INTEGER NOT NULL DEFAULT 0"
+)
+
+addColumnIfMissing(
+  "trails",
+  "elevation_error",
+  "TEXT"
+)
+
 const trailUpdates = [
   {
     name: "Lands End Trail",
