@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS trails (
     elevation_attempts INTEGER NOT NULL DEFAULT 0,
     elevation_error TEXT,
     difficulty TEXT NOT NULL,
+    difficulty_source TEXT NOT NULL DEFAULT 'unknown',
     terrain TEXT NOT NULL,
     scenic_score REAL,
     nature_score REAL,

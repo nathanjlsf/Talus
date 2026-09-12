@@ -9,6 +9,7 @@ export interface Trail {
   estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  difficulty_source: string
   terrain: string
   scenic_score: number | null
   nature_score: number | null
@@ -106,6 +107,7 @@ export function createTrail(trail: {
   estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  difficulty_source: string
   terrain: string
   scenic_score?: number | null
   nature_score?: number | null
@@ -124,6 +126,7 @@ export function createTrail(trail: {
       estimated_time_minutes,
       elevation_gain_feet,
       difficulty,
+      difficulty_source,
       terrain,
       scenic_score,
       nature_score,
@@ -132,7 +135,7 @@ export function createTrail(trail: {
       source,
       source_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
 
@@ -144,6 +147,7 @@ export function createTrail(trail: {
     trail.estimated_time_minutes,
     trail.elevation_gain_feet,
     trail.difficulty,
+    trail.difficulty_source,
     trail.terrain,
     trail.scenic_score ?? null,
     trail.nature_score ?? null,
@@ -176,7 +180,8 @@ export function upsertTrail(trail: {
   distance_miles: number
   estimated_time_minutes: number
   elevation_gain_feet: number
-  difficulty: string
+  difficulty: string,
+  difficulty_source: string,
   terrain: string
   scenic_score?: number | null
   nature_score?: number | null
@@ -212,8 +217,8 @@ export function upsertTrail(trail: {
         description = ?,
         distance_miles = ?,
         estimated_time_minutes = ?,
-        elevation_gain_feet = ?,
         difficulty = ?,
+        difficulty_source = ?,
         terrain = ?,
         scenic_score = ?,
         nature_score = ?,
@@ -227,8 +232,8 @@ export function upsertTrail(trail: {
       trail.description ?? null,
       trail.distance_miles,
       trail.estimated_time_minutes,
-      trail.elevation_gain_feet,
       trail.difficulty,
+      trail.difficulty_source,
       trail.terrain,
       trail.scenic_score ?? null,
       trail.nature_score ?? null,

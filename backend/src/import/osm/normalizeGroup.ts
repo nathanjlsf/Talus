@@ -1,11 +1,16 @@
 import type { TrailGroup } from "./groupTrails.js"
 
+import {
+  difficultyFromSacScale,
+} from "./difficulty.js"
+
 export interface NormalizedTrailGroup {
   name: string
   distance_miles: number
   estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  difficulty_source: string
   terrain: string
   location: string | null
   description: string | null
@@ -64,6 +69,41 @@ function getMostCommonValue(
           b[1] - a[1]
       )[0]?.[0] ?? null
   )
+}
+
+function getDifficulty(
+  group: TrailGroup
+): {
+  difficulty: string
+  difficulty_source: string
+} {
+  const sacScales =
+    getTagValues(
+      group,
+      "sac_scale"
+    )
+
+  const sacScale =
+    getMostCommonValue(
+      sacScales
+    )
+
+  const difficulty =
+    difficultyFromSacScale(
+      sacScale ?? undefined
+    )
+
+  if (difficulty) {
+    return {
+      difficulty,
+      difficulty_source: "osm",
+    }
+  }
+
+  return {
+    difficulty: "Unknown",
+    difficulty_source: "unknown",
+  }
 }
 
 function getTerrain(
@@ -162,6 +202,9 @@ export function normalizeTrailGroup(
       (way) => way.id
     )
 
+  const difficulty =
+    getDifficulty(group)
+
   return {
     name: group.name,
 
@@ -180,7 +223,10 @@ export function normalizeTrailGroup(
 
     elevation_gain_feet: 0,
 
-    difficulty: "Unknown",
+    difficulty: 
+      difficulty.difficulty,
+    difficulty_source:
+      difficulty.difficulty_source,
 
     terrain:
       getTerrain(group),

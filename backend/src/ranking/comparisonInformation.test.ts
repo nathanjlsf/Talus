@@ -15,6 +15,7 @@ function createTrail(
     name: "Trail A",
     location: "California",
     description: null,
+    difficulty_source: "unknown",
     distance_miles: 5,
     estimated_time_minutes: 120,
     elevation_gain_feet: 1000,

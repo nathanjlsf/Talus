@@ -23,6 +23,7 @@ export function addTrail(input: {
   estimated_time_minutes: number
   elevation_gain_feet: number
   difficulty: string
+  difficulty_source: string
   terrain: string
   scenic_score?: number
   nature_score?: number

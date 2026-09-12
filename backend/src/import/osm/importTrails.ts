@@ -132,10 +132,17 @@ export async function importBayAreaTrails() {
 
   let created = 0
   let updated = 0
+  let osmDifficulty = 0
 
   for (const group of candidates) {
     const trail =
       normalizeTrailGroup(group)
+
+    if (
+      trail.difficulty_source === "osm"
+    ) {
+      osmDifficulty++
+    }
 
     const result =
       upsertTrail({
@@ -150,6 +157,8 @@ export async function importBayAreaTrails() {
           trail.elevation_gain_feet,
         difficulty:
           trail.difficulty,
+        difficulty_source:
+          trail.difficulty_source,
         terrain:
           trail.terrain,
         scenic_score:
@@ -199,6 +208,9 @@ export async function importBayAreaTrails() {
   )
   console.log(
     `  Updated: ${updated}`
+  )
+  console.log(
+    `  OSM difficulty: ${osmDifficulty}`
   )
   console.log(
     `  Total: ${candidates.length}`

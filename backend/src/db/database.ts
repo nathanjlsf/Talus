@@ -111,6 +111,12 @@ addColumnIfMissing(
   "TEXT"
 )
 
+addColumnIfMissing(
+  "trails",
+  "difficulty_source",
+  "TEXT NOT NULL DEFAULT 'unknown'"
+)
+
 const trailUpdates = [
   {
     name: "Lands End Trail",
