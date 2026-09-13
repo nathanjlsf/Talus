@@ -5,10 +5,11 @@ import {
   getTrail,
   getRanking,
   type RankedTrail,
+  type Trail,
 } from "../services/api"
 
 function TrailDetail() {
-  const [trail, setTrail] = useState<RankedTrail["trail"] | null>(null)
+  const [trail, setTrail] = useState<Trail | null>(null)
   const [recommendation, setRecommendation] =
     useState<RankedTrail | null>(null)
 
@@ -98,10 +99,24 @@ function TrailDetail() {
           {trail.name}
         </h1>
 
-        {trail.location && (
-          <p className="mt-2 text-lg text-[#687565]">
-            {trail.location}
-          </p>
+        {trail.park_name ? (
+          <div className="mt-2">
+            <p className="text-lg text-[#687565]">
+              {trail.park_name}
+            </p>
+
+            {trail.park_source === "california_state_parks" && (
+              <p className="mt-1 text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+                California State Parks
+              </p>
+            )}
+          </div>
+        ) : (
+          trail.location && (
+            <p className="mt-2 text-lg text-[#687565]">
+              {trail.location}
+            </p>
+          )
         )}
       </div>
 

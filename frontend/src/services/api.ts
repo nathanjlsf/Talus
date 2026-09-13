@@ -4,6 +4,9 @@ export interface Trail {
   id: number
   name: string
   location: string | null
+  park_name: string | null
+  park_type: string | null
+  park_source: string | null
   description: string | null
   distance_miles: number
   estimated_time_minutes: number
@@ -228,7 +231,7 @@ export async function getTrails(filters: {
 
 export async function getTrail(
   trailId: number
-): Promise<RankedTrail["trail"]> {
+): Promise<Trail> {
   const response = await fetch(
     `${API_BASE_URL}/trails/${trailId}`
   )

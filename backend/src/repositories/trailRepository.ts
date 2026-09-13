@@ -4,6 +4,9 @@ export interface Trail {
   id: number
   name: string
   location: string | null
+  park_name: string | null
+  park_type: string | null
+  park_source: string | null
   description: string | null
   distance_miles: number
   estimated_time_minutes: number
@@ -102,6 +105,9 @@ export function getTrailById(id: number): Trail | undefined {
 export function createTrail(trail: {
   name: string
   location?: string | null
+  park_name?:string | null
+  park_type?:string | null
+  park_source?:string | null
   description?: string | null
   distance_miles: number
   estimated_time_minutes: number
@@ -121,6 +127,9 @@ export function createTrail(trail: {
     INSERT INTO trails (
       name,
       location,
+      park_name,
+      park_type,
+      park_source,
       description,
       distance_miles,
       estimated_time_minutes,
@@ -135,13 +144,16 @@ export function createTrail(trail: {
       source,
       source_id
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
 
   const result = statement.run(
     trail.name,
     trail.location ?? null,
+    trail.park_name ?? null,
+    trail.park_type ?? null,
+    trail.park_source ?? null,
     trail.description ?? null,
     trail.distance_miles,
     trail.estimated_time_minutes,
@@ -176,6 +188,9 @@ export function deleteTrail(id: number): boolean {
 export function upsertTrail(trail: {
   name: string
   location?: string | null
+  park_name?: string | null
+  park_type?: string | null
+  park_source?: string | null
   description?: string | null
   distance_miles: number
   estimated_time_minutes: number

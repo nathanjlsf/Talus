@@ -21,9 +21,9 @@ function TrailResultCard({ trail }: TrailResultCardProps) {
           {trail.name}
         </h3>
 
-        {trail.location && (
+        {(trail.park_name || trail.location) && (
           <p className="mt-1 text-sm text-[#687565]">
-            {trail.location}
+            {trail.park_name ?? trail.location}
           </p>
         )}
 
