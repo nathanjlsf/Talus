@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS trails (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     location TEXT,
+    county TEXT,
     park_name TEXT,
     park_type TEXT,
     park_source TEXT,

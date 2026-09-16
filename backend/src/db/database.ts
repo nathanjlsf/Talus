@@ -135,6 +135,12 @@ addColumnIfMissing(
   "TEXT"
 )
 
+addColumnIfMissing(
+  "trails",
+  "county",
+  "TEXT"
+)
+
 const trailUpdates = [
   {
     name: "Lands End Trail",
