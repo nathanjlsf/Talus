@@ -12,6 +12,7 @@ const router = Router()
 
 router.get("/", (req, res) => {
   const search = String(req.query.search ?? "").trim()
+  const location = String(req.query.location ?? "").trim()
   const difficulty = String(req.query.difficulty ?? "").trim()
 
   const maxDistanceValue = Number(req.query.maxDistance)
@@ -27,6 +28,7 @@ router.get("/", (req, res) => {
 
   const hasFilters =
     search ||
+    location ||
     difficulty ||
     maxDistance !== undefined ||
     maxElevation !== undefined
@@ -34,6 +36,7 @@ router.get("/", (req, res) => {
   if (hasFilters) {
     const trails = searchTrailList({
       search,
+      location,
       difficulty,
       maxDistance,
       maxElevation,

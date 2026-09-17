@@ -120,7 +120,7 @@ function TrailDetail() {
         )}
       </div>
 
-      <div className="mt-8 grid gap-5 md:grid-cols-3">
+      <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Distance
@@ -148,6 +148,32 @@ function TrailDetail() {
 
           <p className="mt-2 text-2xl font-semibold">
             {trail.difficulty}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+          <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+            Estimated time
+          </p>
+
+          <p className="mt-2 text-2xl font-semibold">
+            {trail.estimated_time_minutes < 60
+              ? `${trail.estimated_time_minutes} min`
+              : `${Math.floor(trail.estimated_time_minutes / 60)} hr${
+                  trail.estimated_time_minutes % 60
+                    ? ` ${trail.estimated_time_minutes % 60} min`
+                    : ""
+               }`}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+          <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+            Terrain
+          </p>
+
+          <p className="mt-2 text-2xl font-semibold">
+            {trail.terrain}
           </p>
         </div>
       </div>

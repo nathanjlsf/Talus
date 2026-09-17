@@ -38,7 +38,13 @@ function TrailResultCard({ trail }: TrailResultCardProps) {
 
           {trail.estimated_time_minutes !== null && (
             <span>
-              {Math.round(trail.estimated_time_minutes / 60)} hr
+              {trail.estimated_time_minutes < 60
+                ? `${trail.estimated_time_minutes} min`
+                : `${Math.floor(trail.estimated_time_minutes / 60)} hr${
+                    trail.estimated_time_minutes % 60
+                      ? ` ${trail.estimated_time_minutes % 60} min`
+                      : ""
+                  }`}
             </span>
           )}
 

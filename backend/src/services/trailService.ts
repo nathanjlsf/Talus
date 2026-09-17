@@ -39,6 +39,7 @@ export function removeTrail(id: number): boolean {
 
 export function searchTrailList(filters: {
   search?: string | undefined
+  location?: string | undefined
   difficulty?: string | undefined
   maxDistance?: number | undefined
   maxElevation?: number | undefined

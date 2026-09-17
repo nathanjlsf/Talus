@@ -37,6 +37,7 @@ export function getAllTrails(): Trail[] {
 
 export function searchTrails(filters: {
   search?: string | undefined
+  location?: string | undefined
   difficulty?: string | undefined
   maxDistance?: number | undefined
   maxElevation?: number | undefined
@@ -56,6 +57,11 @@ export function searchTrails(filters: {
     `)
 
     parameters.push(query, query, query)
+  }
+
+  if (filters.location?.trim()) {
+    conditions.push("location LIKE ?")
+    parameters.push(`%${filters.location.trim()}%`)
   }
 
   if (filters.difficulty) {
