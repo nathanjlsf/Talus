@@ -4,6 +4,7 @@ import type { UserPreference } from "./preferenceTypes.js"
 import {
   calculatePairInformation,
 } from "./comparisonInformation.js"
+import { diff } from "node:util"
 
 export interface ComparisonPair {
   firstTrailId: number
@@ -161,7 +162,8 @@ export function selectComparisonPairs(
   trails: Trail[],
   count: number,
   seenPairs: ComparisonPair[] = [],
-  preferences: UserPreference[] = []
+  preferences: UserPreference[] = [],
+  excludedTrailIds: number[] = []
 ): ComparisonPair[] {
   const seenPairKeys = new Set(
     seenPairs.map(
@@ -172,6 +174,9 @@ export function selectComparisonPairs(
         )
     )
   )
+
+  const excludedTrailIdSet =
+    new Set(excludedTrailIds)
 
   const pairs: Array<
     ComparisonPair & {
@@ -203,6 +208,13 @@ export function selectComparisonPairs(
         continue
       }
 
+      if (
+        excludedTrailIdSet.has(first.id) ||
+        excludedTrailIdSet.has(second.id)
+      ) {
+        continue
+      }
+
       const pairKey =
         getPairKey(
           first.id,
@@ -228,16 +240,28 @@ export function selectComparisonPairs(
           preferences
         )
 
-      const hasLearnedPreferences =
-        preferences.some(
-          (preference) =>
-            preference.confidence > 0
-        )
+      const comparisonNumber =
+        seenPairs.length
 
+      const targetDifferece =
+        comparisonNumber % 4 === 0
+          ? 0.85
+          : comparisonNumber % 4 === 1
+            ? 0.55
+            : comparisonNumber % 4 === 2
+              ? 0.65
+              : 0.8
+
+      const differencePreference =
+        -Math.abs(
+          difference - targetDifferece
+        )
+      
       const score =
         preferences.length > 0
-          ? information
-          : difference
+          ? information +
+            differencePreference * 0.5
+          : differencePreference
 
       pairs.push({
         firstTrailId: first.id,

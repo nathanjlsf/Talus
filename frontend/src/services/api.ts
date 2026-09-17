@@ -323,10 +323,24 @@ export async function createExperience(input: {
 }
 
 export async function getNextComparison(
-  userId: number
+  userId: number,
+  excludedTrailIds: number[] = []
 ): Promise<ComparisonPair> {
+  const params = new URLSearchParams()
+
+  if (excludedTrailIds.length > 0) {
+    params.set(
+      "exclude",
+      excludedTrailIds.join(",")
+    )
+  }
+
+  const query = params.toString()
+
   const response = await fetch(
-    `${API_BASE_URL}/comparisons/next/${userId}`
+    `${API_BASE_URL}/comparisons/next/${userId}${
+      query ? `?${query}` : ""
+    }`
   )
 
   if (!response.ok) {

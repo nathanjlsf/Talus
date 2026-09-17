@@ -19,6 +19,9 @@ function Compare() {
   const [comparisonCount, setComparisonCount] =
     useState(0)
 
+  const [shownTrailIds, setShownTrailIds] =
+    useState<number[]>([])
+
   const [loading, setLoading] =
     useState(true)
 
@@ -44,7 +47,10 @@ function Compare() {
     async function loadComparison() {
       try {
         const comparison =
-          await getNextComparison(1)
+          await getNextComparison(
+            1,
+            shownTrailIds
+        )
 
         setLeftTrail({
           rank: 0,
@@ -59,6 +65,11 @@ function Compare() {
           score: 0,
           explanations: [],
         })
+
+        setShownTrailIds([
+          comparison.firstTrail.id,
+          comparison.secondTrail.id,
+        ])
       } catch (error) {
         setError(
           error instanceof Error
@@ -104,7 +115,10 @@ function Compare() {
       }
 
       const comparison =
-        await getNextComparison(1)
+        await getNextComparison(
+          1,
+          shownTrailIds
+      )
 
       setLeftTrail({
         rank: 0,
@@ -119,6 +133,12 @@ function Compare() {
         score: 0,
         explanations: [],
       })
+
+      setShownTrailIds((current) => [
+        ...current,
+        comparison.firstTrail.id,
+        comparison.secondTrail.id,
+      ])
     } catch (error) {
       setError(
         error instanceof Error
@@ -341,6 +361,20 @@ function TrailChoice({
 
         <span>
           {trail.trail.difficulty}
+        </span>
+
+        <span>
+          {trail.trail.estimated_time_minutes < 60
+            ? `${trail.trail.estimated_time_minutes} min`
+            : `${Math.floor(
+                trail.trail.estimated_time_minutes / 60
+              )} hr${
+                trail.trail.estimated_time_minutes % 60
+                  ? ` ${
+                    trail.trail.estimated_time_minutes % 60
+                  } min`
+                  : ""
+              }`}
         </span>
       </div>
 

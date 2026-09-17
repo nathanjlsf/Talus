@@ -31,6 +31,17 @@ router.get("/next/:userId", (req, res) => {
   const comparisons =
     listComparisonsForUser(userId)
 
+  const excludeParam =
+    String(req.query.exclude ?? "").trim()
+
+  const excludedTrailIds =
+    excludeParam
+      ? excludeParam
+          .split(",")
+          .map(Number)
+          .filter(Number.isInteger)
+      : []
+
   const preferences =
     calculateUserPreferences(userId)
 
@@ -48,7 +59,8 @@ router.get("/next/:userId", (req, res) => {
       trails,
       1,
       seenPairs,
-      preferences
+      preferences,
+      excludedTrailIds
     )
 
   if (pairs.length === 0) {
