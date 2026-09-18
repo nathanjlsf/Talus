@@ -7,7 +7,6 @@
     "dev": "tsx watch src/index.ts",
     "seed": "tsx src/db/seed.ts",
     "seed:user": "tsx src/db/seedUser.ts",
-    "import:test-osm": "tsx src/import/osm/testOverpass.ts",
     "import:osm": "tsx src/import/osm/runImport.ts",
     "test": "vitest",
     "build": "tsc",

@@ -8,7 +8,7 @@ const BAY_AREA_BBOX = {
   east: -121.3,
 }
 
-const BBOX_GRID = [
+export const BBOX_GRID = [
   {
     south: 37.0,
     west: -123.0,
@@ -74,6 +74,29 @@ export interface OsmWay {
 
 interface OverpassWaysResponse {
   elements: OsmWay[]
+}
+
+interface EnvironmentalFeature {
+  type: string
+  id: number
+  tags?: Record<string, string>
+  geometry?: Array<{
+    lat: number
+    lon: number
+  }>
+  members?: Array<{
+    type: string
+    ref: number
+    role: string
+    geometry?: Array<{
+      lat: number
+      lon: number
+    }>
+  }>
+}
+
+interface EnvironmentalResponse {
+  elements: EnvironmentalFeature[]
 }
 
 function sleep(
@@ -374,5 +397,176 @@ export async function fetchBayAreaHikingRelations(): Promise<
 
   throw new Error(
     "Overpass hiking relation request failed unexpectedly"
+  )
+}
+
+export async function fetchOverpassJson<T>(
+  query: string
+): Promise<T> {
+  for (
+    let attempt = 1;
+    attempt <= MAX_RETRIES;
+    attempt++
+  ) {
+    try {
+      const response = await fetch(
+        OVERPASS_URL,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/x-www-form-urlencoded",
+            "User-Agent":
+              "Talus/1.0 (hiking trail data importer)",
+            "Referer":
+              "http://localhost:5173/",
+          },
+          body:
+            "data=" +
+            encodeURIComponent(query),
+        }
+      )
+
+      if (response.ok) {
+        return (
+          await response.json()
+        ) as T
+      }
+
+      if (
+        response.status === 429 ||
+        response.status === 504 ||
+        response.status === 502 ||
+        response.status === 503
+      ) {
+        if (
+          attempt === MAX_RETRIES
+        ) {
+          throw new Error(
+            `Overpass request failed after ${MAX_RETRIES} attempts: ${response.status} ${response.statusText}`
+          )
+        }
+
+        const retryDelay =
+          REQUEST_DELAY_MS *
+          2 ** (attempt - 1)
+
+        console.warn(
+          `Overpass returned ${response.status}. Retrying in ${retryDelay / 1000}s...`
+        )
+
+        await sleep(
+          retryDelay
+        )
+
+        continue
+      }
+
+      throw new Error(
+        `Overpass request failed: ${response.status} ${response.statusText}`
+      )
+    } catch (error) {
+      if (
+        attempt === MAX_RETRIES
+      ) {
+        throw error
+      }
+
+      const retryDelay =
+        REQUEST_DELAY_MS *
+        2 ** (attempt - 1)
+
+      console.warn(
+        `Overpass request error. Retrying in ${retryDelay / 1000}s...`
+      )
+
+      await sleep(
+        retryDelay
+      )
+    }
+  }
+
+  throw new Error(
+    "Overpass request failed unexpectedly"
+  )
+}
+
+export async function fetchNearbyEnvironmentalFeatures(
+  minLat: number,
+  minLon: number,
+  maxLat: number,
+  maxLon: number
+) {
+  const query = `
+    [out:json][timeout:180];
+
+    (
+      way["natural"="wood"](${minLat},${minLon},${maxLat},${maxLon});
+      way["landuse"="forest"](${minLat},${minLon},${maxLat},${maxLon});
+      way["natural"="water"](${minLat},${minLon},${maxLat},${maxLon});
+      way["waterway"](${minLat},${minLon},${maxLat},${maxLon});
+      way["natural"="beach"](${minLat},${minLon},${maxLat},${maxLon});
+      way["natural"="coastline"](${minLat},${minLon},${maxLat},${maxLon});
+      way["tourism"="viewpoint"](${minLat},${minLon},${maxLat},${maxLon});
+
+      relation["natural"="wood"](${minLat},${minLon},${maxLat},${maxLon});
+      relation["landuse"="forest"](${minLat},${minLon},${maxLat},${maxLon});
+    );
+
+    out geom;
+  `
+
+  const data =
+    await fetchOverpassJson<EnvironmentalResponse>(
+      query
+    )
+
+  return data.elements
+}
+
+export async function fetchBayAreaEnvironmentalFeatures() {
+  const allFeatures = new Map<
+    string,
+    EnvironmentalFeature
+  >()
+
+  for (
+    const bbox of BBOX_GRID
+  ) {
+    if (allFeatures.size > 0) {
+      await sleep(15000)
+    }
+    const {
+      south,
+      west,
+      north,
+      east,
+    } = bbox
+
+    console.log(
+      `Fetching environmental features for ${south},${west},${north},${east}...`
+    )
+
+    const features =
+      await fetchNearbyEnvironmentalFeatures(
+        south,
+        west,
+        north,
+        east
+      )
+
+    for (const feature of features) {
+      const key =
+        `${feature.type}/${feature.id}`
+
+      allFeatures.set(
+        key,
+        feature
+      )
+    }
+  }
+
+  return Array.from(
+    allFeatures.values()
   )
 }

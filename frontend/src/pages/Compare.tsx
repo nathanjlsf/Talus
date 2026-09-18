@@ -196,23 +196,21 @@ function Compare() {
             <button
               type="button"
               onClick={() => {
-                window.location.href =
-                  "/hike-dna"
+                window.location.href = "/trails"
               }}
               className="rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b]"
             >
-              See my Hike DNA
+              Discover my trails
             </button>
 
             <button
               type="button"
               onClick={() => {
-                window.location.href =
-                  "/trails"
+                window.location.href = "/hike-dna"
               }}
               className="rounded-full border border-[#b9b6aa] bg-[#f3efe4] px-6 py-3 font-medium text-[#314936] transition hover:border-[#314936]"
             >
-              Discover trails
+              See my Hike DNA
             </button>
           </div>
         </div>
