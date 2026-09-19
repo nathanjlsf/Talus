@@ -16,7 +16,9 @@ export interface Trail {
   scenic_score: number | null
   nature_score: number | null
   solitude_score: number | null
+  forest_score: number | null
   water_score: number | null
+  coastal_score: number | null
 }
 
 export interface RecommendationExplanation {
@@ -40,7 +42,9 @@ export interface RankedTrail {
     scenic_score: number | null
     nature_score: number | null
     solitude_score: number | null
+    forest_score: number | null
     water_score: number | null
+    coastal_score: number | null
   }
   score: number
   explanations: RecommendationExplanation[]
@@ -55,6 +59,9 @@ export interface UserPreference {
     | "scenic"
     | "nature"
     | "solitude"
+    | "forest"
+    | "water"
+    | "coastal"
 
   score: number
   confidence: number

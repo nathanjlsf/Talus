@@ -17,7 +17,9 @@ export interface Trail {
   scenic_score: number | null
   nature_score: number | null
   solitude_score: number | null
+  forest_score: number | null
   water_score: number | null
+  coastal_score: number | null
   source?: string | null
   source_id?: string | null
   created_at: string

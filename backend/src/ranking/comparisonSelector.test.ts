@@ -26,7 +26,9 @@ describe("selectComparisonPairs", () => {
       scenic_score: 0.3,
       nature_score: 0.3,
       solitude_score: 0.3,
+      forest_score : null,
       water_score: 0.2,
+      coastal_score: null,
       created_at: "",
     },
     {
@@ -46,7 +48,9 @@ describe("selectComparisonPairs", () => {
       scenic_score: 0.9,
       nature_score: 0.9,
       solitude_score: 0.8,
+      forest_score: null,
       water_score: 0.7,
+      coastal_score: null,
       created_at: "",
     },
     {
@@ -66,7 +70,9 @@ describe("selectComparisonPairs", () => {
       scenic_score: 0.6,
       nature_score: 0.6,
       solitude_score: 0.5,
+      forest_score: null,
       water_score: 0.5,
+      coastal_score: null,
       created_at: "",
     },
   ]
@@ -90,7 +96,7 @@ describe("selectComparisonPairs", () => {
 
     expect(pairs[0]).toEqual({
       firstTrailId: 1,
-      secondTrailId: 2,
+      secondTrailId: 3,
     })
   })
 
@@ -201,7 +207,9 @@ describe("selectComparisonPairs", () => {
         scenic_score: 0.5,
         nature_score: 0.5,
         solitude_score: 0.5,
+        forest_score: 0.5,
         water_score: 0.5,
+        coastal_score: 0.5,
         created_at: "",
         },
         {
@@ -221,7 +229,9 @@ describe("selectComparisonPairs", () => {
         scenic_score: 0.5,
         nature_score: 0.5,
         solitude_score: 0.5,
+        forest_score: 0.5,
         water_score: 0.5,
+        coastal_score: 0.5,
         created_at: "",
         },
         {
@@ -241,7 +251,9 @@ describe("selectComparisonPairs", () => {
         scenic_score: 1,
         nature_score: 0.5,
         solitude_score: 0.5,
+        forest_score: 0.5,
         water_score: 0.5,
+        coastal_score: 0.5,
         created_at: "",
         },
     ]

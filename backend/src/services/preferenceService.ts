@@ -28,6 +28,10 @@ import {
   calculateExperienceSignal,
 } from "../ranking/experienceSignal.js"
 
+import type {
+  ExperienceAttribute,
+} from "../ranking/experienceSignal.js"
+
 export function listComparisonsForUser(
   userId: number
 ) {
@@ -117,8 +121,25 @@ export function calculateCombinedPreferences(
       const attribute =
         preference.attribute
 
+      const isExperienceAttribute =
+        (
+          [
+            "distance",
+            "elevation",
+            "difficulty",
+            "terrain",
+            "scenic",
+            "nature",
+            "solitude",
+          ] as ExperienceAttribute[]
+        ).includes(attribute as ExperienceAttribute)
+
       const experienceEvidence =
-        experienceResult.evidence[attribute]
+        isExperienceAttribute
+          ? experienceResult.evidence[
+              attribute as ExperienceAttribute
+            ]
+          : 0
 
       const pairwiseEvidence =
         comparisons.length
@@ -131,7 +152,11 @@ export function calculateCombinedPreferences(
       }
 
       const experienceSignal =
-        experienceResult.signal[attribute]
+        isExperienceAttribute
+          ? experienceResult.signal[
+              attribute as ExperienceAttribute
+            ]
+          : 0
 
       const experienceScore =
         50 +

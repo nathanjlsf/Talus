@@ -27,7 +27,9 @@ function createTrail(
     scenic_score: 0.5,
     nature_score: 0.5,
     solitude_score: 0.5,
+    forest_score: 0.5,
     water_score: 0.5,
+    coastal_score: 0.5,
     created_at: "2026-01-01",
     ...overrides,
   }

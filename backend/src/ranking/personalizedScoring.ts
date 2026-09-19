@@ -11,6 +11,9 @@ interface TrailAttributes {
   scenic_score: number | null
   nature_score: number | null
   solitude_score: number | null
+  forest_score: number | null
+  water_score: number | null
+  coastal_score: number | null
 }
 
 const LEARNED_ATTRIBUTES: PreferenceAttribute[] = [
@@ -21,6 +24,9 @@ const LEARNED_ATTRIBUTES: PreferenceAttribute[] = [
   "scenic",
   "nature",
   "solitude",
+  "forest",
+  "water",
+  "coastal",
 ]
 
 function normalizeDifficulty(
@@ -117,6 +123,15 @@ function getAttributeValue(
 
     case "solitude":
       return trail.solitude_score
+
+    case "forest":
+      return trail.forest_score
+
+    case "water":
+      return trail.water_score
+
+    case "coastal":
+      return trail.coastal_score
 
     default:
       return null

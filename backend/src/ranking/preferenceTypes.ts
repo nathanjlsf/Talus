@@ -6,6 +6,9 @@ export type PreferenceAttribute =
   | "scenic"
   | "nature"
   | "solitude"
+  | "forest"
+  | "water"
+  | "coastal"
 
 export interface UserPreference {
   attribute: PreferenceAttribute

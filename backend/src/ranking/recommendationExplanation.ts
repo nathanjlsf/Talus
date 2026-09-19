@@ -8,6 +8,9 @@ interface TrailAttributes {
   scenic_score: number | null
   nature_score: number | null
   solitude_score: number | null
+  forest_score: number | null
+  water_score: number | null
+  coastal_score: number | null
 }
 
 export interface RecommendationExplanation {
@@ -27,6 +30,9 @@ const labels: Record<
   scenic: "scenery",
   nature: "natural surroundings",
   solitude: "solitude",
+  forest: "forest",
+  water: "water",
+  coastal: "coastal scenery",
 }
 
 function normalizeDifficulty(
@@ -124,6 +130,15 @@ function getTrailValue(
     case "solitude":
       return trail.solitude_score
 
+    case "forest":
+      return trail.forest_score
+
+    case "water":
+      return trail.water_score
+
+    case "coastal":
+      return trail.coastal_score
+
     default:
       return null
   }
@@ -179,7 +194,7 @@ export function generateRecommendationExplanations(
       message:
         contribution > 0
           ? `Strong match: this trail's ${label} fit what Talus has learned you prefer.`
-          : `Potential mismatch: this trail's ${label} difffer from what Talus has learned you prefer.`,
+          : `Potential mismatch: this trail's ${label} differs from what Talus has learned you prefer.`,
       contribution: Math.abs(contribution),
     })
   }

@@ -16,6 +16,9 @@ describe("generateRecommendationExplanations", () => {
           scenic_score: 0.9,
           nature_score: 0.4,
           solitude_score: 0.6,
+          forest_score: 0.7,
+          water_score: 0.5,
+          coastal_score: 0.3,
         },
         [
           {
@@ -48,6 +51,9 @@ describe("generateRecommendationExplanations", () => {
           scenic_score: 0.2,
           nature_score: 0.4,
           solitude_score: 0.6,
+          forest_score: 0.7,
+          water_score: 0.5,
+          coastal_score: 0.3,
         },
         [
           {
@@ -76,6 +82,9 @@ describe("generateRecommendationExplanations", () => {
           scenic_score: 0.9,
           nature_score: 0.4,
           solitude_score: 0.6,
+          forest_score: 0.7,
+          water_score: 0.5,
+          coastal_score: 0.3,
         },
         [
           {
@@ -100,6 +109,9 @@ describe("generateRecommendationExplanations", () => {
           scenic_score: 0.5,
           nature_score: 0.4,
           solitude_score: 0.6,
+          forest_score: 0.7,
+          water_score: 0.5,
+          coastal_score: 0.3,
         },
         [
           {
@@ -111,5 +123,60 @@ describe("generateRecommendationExplanations", () => {
       )
 
     expect(explanations).toHaveLength(0)
+  })
+
+  it("explains strong environmental matches", () => {
+    const trail = {
+      distance_miles: 5,
+      elevation_gain_feet: 800,
+      difficulty: "Moderate",
+      terrain: "Dirt",
+      scenic_score: 0.5,
+      nature_score: 0.5,
+      solitude_score: 0.5,
+      forest_score: 0.9,
+      water_score: 0.8,
+      coastal_score: 0.2,
+    }
+
+    const preferences = [
+      {
+        attribute: "forest" as const,
+        score: 90,
+        confidence: 0.9,
+      },
+      {
+        attribute: "water" as const,
+        score: 85,
+        confidence: 0.9,
+      },
+      {
+        attribute: "coastal" as const,
+        score: 40,
+        confidence: 0.9,
+      },
+    ]
+
+    const explanations =
+      generateRecommendationExplanations(
+        trail,
+        preferences
+      )
+
+    expect(
+      explanations.some(
+        (explanation) =>
+          explanation.attribute === "forest" &&
+          explanation.direction === "positive"
+      )
+    ).toBe(true)
+
+    expect(
+      explanations.some(
+        (explanation) =>
+          explanation.attribute === "water" &&
+          explanation.direction === "positive"
+      )
+    ).toBe(true)
   })
 })

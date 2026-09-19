@@ -74,8 +74,14 @@ export function calculateRanking(
         solitude_score:
           result.trail.solitude_score,
 
+        forest_score:
+          result.trail.forest_score,
+
         water_score:
           result.trail.water_score,
+
+        coastal_score:
+          result.trail.coastal_score,
       },
 
       score: result.score,

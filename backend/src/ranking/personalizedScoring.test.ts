@@ -16,6 +16,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.9,
           nature_score: 0.9,
           solitude_score: 0.7,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -45,6 +48,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.2,
           nature_score: 0.2,
           solitude_score: 0.4,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -74,6 +80,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.9,
           nature_score: 0.8,
           solitude_score: 0.8,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         []
       )
@@ -92,6 +101,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.9,
           nature_score: 0.8,
           solitude_score: 0.8,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -121,6 +133,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.5,
           nature_score: 0.5,
           solitude_score: 0.5,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -150,6 +165,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.5,
           nature_score: 0.5,
           solitude_score: 0.5,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -179,6 +197,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.5,
           nature_score: 0.5,
           solitude_score: 0.5,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -203,6 +224,9 @@ describe("calculatePersonalizedScore", () => {
           scenic_score: 0.5,
           nature_score: 0.5,
           solitude_score: 0.5,
+          forest_score: null,
+          water_score: null,
+          coastal_score: null,
         },
         [
           {
@@ -214,5 +238,66 @@ describe("calculatePersonalizedScore", () => {
       )
 
     expect(score).toBeGreaterThan(50)
+  })
+
+  it("uses forest, water, and coastal preferences", () => {
+    const trail = {
+      distance_miles: 5,
+      elevation_gain_feet: 500,
+      difficulty: "Moderate",
+      terrain: "Dirt",
+      scenic_score: 0.5,
+      nature_score: 0.5,
+      solitude_score: 0.5,
+      forest_score: 0.9,
+      water_score: 0.2,
+      coastal_score: 0.1,
+    }
+
+    const forestPreference = [
+      {
+        attribute: "forest" as const,
+        score: 90,
+        confidence: 1,
+      },
+    ]
+
+    const waterPreference = [
+      {
+        attribute: "water" as const,
+        score: 90,
+        confidence: 1,
+      },
+    ]
+
+    const coastalPreference = [
+      {
+        attribute: "coastal" as const,
+        score: 90,
+        confidence: 1,
+      },
+    ]
+
+    const forestScore =
+      calculatePersonalizedScore(
+        trail,
+        forestPreference
+      )
+
+    const waterScore =
+      calculatePersonalizedScore(
+        trail,
+        waterPreference
+      )
+
+    const coastalScore =
+      calculatePersonalizedScore(
+        trail,
+        coastalPreference
+      )
+
+    expect(forestScore).toBeGreaterThan(50)
+    expect(waterScore).toBeLessThan(50)
+    expect(coastalScore).toBeLessThan(50)
   })
 })

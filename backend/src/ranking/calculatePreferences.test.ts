@@ -15,6 +15,9 @@ describe("calculatePreferences", () => {
       scenic_score: 0.9,
       nature_score: 0.3,
       solitude_score: 0.5,
+      forest_score: null,
+      water_score: null,
+      coastal_score: null,
     },
     {
       id: 2,
@@ -25,6 +28,9 @@ describe("calculatePreferences", () => {
       scenic_score: 0.6,
       nature_score: 0.8,
       solitude_score: 0.7,
+      forest_score: null,
+      water_score: null,
+      coastal_score: null,
     },
   ]
 
@@ -96,8 +102,12 @@ describe("calculatePreferences", () => {
         trails
       )
 
-    const confidences =
-      preferences.map(
+    const confidences = preferences
+      .filter(
+        (preference) =>
+          preference.confidence > 0
+      )
+      .map(
         (preference) =>
           preference.confidence
       )
@@ -254,7 +264,75 @@ describe("calculatePreferences", () => {
 
     for (const preference of preferences) {
       expect(preference.confidence).toBeLessThan(0.5)
-      expect(preference.confidence).toBeGreaterThan(0)
+
+      if (
+        preference.attribute === "forest" ||
+        preference.attribute === "water" ||
+        preference.attribute === "coastal"
+      ) {
+        expect(preference.confidence).toBe(0)
+      } else {
+        expect(preference.confidence).toBeGreaterThan(0)
+      }
     }
+  })
+
+  it("learns forest, water, and coastal preferences", () => {
+    const trails = [
+      {
+        id: 1,
+        distance_miles: 4,
+        elevation_gain_feet: 500,
+        difficulty: "Moderate",
+        terrain: "Dirt",
+        scenic_score: 0.5,
+        nature_score: 0.5,
+        solitude_score: 0.5,
+        forest_score: 0.9,
+        water_score: 0.2,
+        coastal_score: 0.1,
+      },
+      {
+        id: 2,
+        distance_miles: 4,
+        elevation_gain_feet: 500,
+        difficulty: "Moderate",
+        terrain: "Dirt",
+        scenic_score: 0.5,
+        nature_score: 0.5,
+        solitude_score: 0.5,
+        forest_score: 0.2,
+        water_score: 0.9,
+        coastal_score: 0.8,
+      },
+    ]
+
+    const comparisons = [
+      {
+        winnerTrailId: 1,
+        loserTrailId: 2,
+      },
+    ]
+
+    const preferences = calculatePreferences(
+      comparisons,
+      trails
+    )
+
+    const forest = preferences.find(
+      (preference) => preference.attribute === "forest"
+    )
+
+    const water = preferences.find(
+      (preference) => preference.attribute === "water"
+    )
+
+    const coastal = preferences.find(
+      (preference) => preference.attribute === "coastal"
+    )
+
+    expect(forest?.score).toBeGreaterThan(50)
+    expect(water?.score).toBeLessThan(50)
+    expect(coastal?.score).toBeLessThan(50)
   })
 })
