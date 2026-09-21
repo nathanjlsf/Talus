@@ -66,3 +66,37 @@ export function getTrailGeometry(
     )
     .all(trailId) as TrailGeometryPoint[]
 }
+
+export interface TrailCenterPoint {
+  latitude: number
+  longitude: number
+}
+
+export function getTrailCenter(
+  trailId: number
+): TrailCenterPoint | null {
+  const points = getTrailGeometry(trailId)
+
+  if (points.length === 0) {
+    return null
+  }
+
+  const totalLatitude =
+    points.reduce(
+      (sum, point) => sum + point.latitude,
+      0
+    )
+
+  const totalLongitude =
+    points.reduce(
+      (sum, point) => sum + point.longitude,
+      0
+    )
+
+  return {
+    latitude:
+      totalLatitude / points.length,
+    longitude:
+      totalLongitude / points.length,
+  }
+}

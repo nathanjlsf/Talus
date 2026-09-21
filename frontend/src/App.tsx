@@ -8,6 +8,8 @@ import Home from "./pages/Home"
 import Activities from "./pages/Activities"
 import Onboarding from "./pages/Onboarding"
 import Experience from "./pages/Experience"
+import PastHikes from "./pages/PastHikes"
+import OnboardingExperiences from "./pages/OnboardingExperiences"
 
 function App() {
   const path = window.location.pathname
@@ -30,6 +32,10 @@ function App() {
     page = <Activities />
   } else if (path.startsWith("/activities/") && path.endsWith("/experience")) {
     page = <Experience />
+  } else if (path === "/onboarding/hikes") {
+    page = <PastHikes />
+  } else if (path === "/onbaording/experiences") {
+    page = <OnboardingExperiences />
   } else {
     page = <Rankings />
   }

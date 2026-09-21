@@ -131,7 +131,6 @@ async function fetchWaysForBbox(
     (
       way["highway"="path"](${south},${west},${north},${east});
       way["highway"="footway"](${south},${west},${north},${east});
-      way["highway"="bridleway"](${south},${west},${north},${east});
       way["highway"="track"]["foot"="yes"](${south},${west},${north},${east});
       way["highway"="track"]["foot"="designated"](${south},${west},${north},${east});
     );

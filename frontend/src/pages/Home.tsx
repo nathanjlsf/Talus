@@ -39,9 +39,9 @@ function Home() {
     async function loadHomeData() {
       try {
         const [rankingData, insightData, activityData] = await Promise.all([
-          getRanking(1),
-          getPreferenceInsights(1),
-          getActivities(1),
+          getRanking(9999),
+          getPreferenceInsights(9999),
+          getActivities(9999),
         ])
 
         setRanking(rankingData)
@@ -55,7 +55,10 @@ function Home() {
     loadHomeData()
   }, [])
 
-  const topTrail = ranking[0]
+  const hasLearnedPreferences = insights.length > 0
+  const topTrail = hasLearnedPreferences
+    ? ranking[0]
+    : null
 
   return (
     <section>
@@ -148,24 +151,29 @@ function Home() {
         </div>
       )}
 
-      {!loading && !topTrail && (
+      {!loading && !hasLearnedPreferences && (
         <div className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8">
-          <h2 className="text-2xl font-semibold">
-            Talus is ready to learn.
+          <p className="text-sm font-medium uppercase tracking-[0.15em] text-[#687565]">
+            Start here
+          </p>
+
+          <h2 className="mt-3 text-2xl font-semibold">
+            Let's figure out your hiking style.
           </h2>
 
           <p className="mt-3 max-w-xl leading-7 text-[#687565]">
-            Compare a few trails to help Talus understand what you like.
+            Tell Talus which trails you'd rather hike. After a few choices,
+            we'll start building recommendations around what you actually like.
           </p>
 
           <button
             onClick={() => {
-              window.location.href = "/compare"
+              window.location.href = "/onboarding"
             }}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#314936] px-5 py-3 font-medium text-white"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#314936] px-5 py-3 font-medium text-white transition hover:bg-[#263a2b]"
           >
-            Start comparing
-            <GitCompare size={17} />
+            Get started
+            <ArrowRight size={17} />
           </button>
         </div>
       )}

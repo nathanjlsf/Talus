@@ -19,8 +19,8 @@ export interface NormalizedTrail {
 
 const VALID_HIGHWAYS = new Set([
   "path",
+  "foot",
   "track",
-  "bridleway",
 ])
 
 function calculateDistanceMiles(

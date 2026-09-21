@@ -26,7 +26,7 @@ function Rankings() {
   useEffect(() => {
     async function loadRanking() {
       try {
-        const data = await getRanking(1)
+        const data = await getRanking(9999)
         setRanking(data)
       } catch (error) {
         setError(

@@ -31,6 +31,58 @@ import {
   replaceTrailGeometry,
 } from "../../repositories/trailGeometryRepository.js"
 
+import {
+  findCounty,
+} from "../geo/countyLookup.js"
+
+import {
+  getTrailCenter,
+} from "../../repositories/trailGeometryRepository.js"
+
+function getGroupCenter(
+  group: {
+    ways: Array<{
+      geometry?: Array<{
+        lat: number
+        lon: number
+      }>
+    }>
+  }
+): {
+  latitude: number
+  longitude: number
+} | null {
+  const points =
+    group.ways.flatMap(
+      (way) => way.geometry ?? []
+    )
+
+  if (points.length === 0) {
+    return null
+  }
+
+  const totalLatitude =
+    points.reduce(
+      (sum, point) =>
+        sum + point.lat,
+      0
+    )
+
+  const totalLongitude =
+    points.reduce(
+      (sum, point) =>
+        sum + point.lon,
+      0
+    )
+
+  return {
+    latitude:
+      totalLatitude / points.length,
+    longitude:
+      totalLongitude / points.length,
+  }
+}
+
 export async function importBayAreaTrails() {
   console.log("Fetching OSM ways...")
 
@@ -135,8 +187,23 @@ export async function importBayAreaTrails() {
   let osmDifficulty = 0
 
   for (const group of candidates) {
+    console.log(
+      `Importing trail ${created + updated + 1}/${candidates.length}: ${group.name}`
+    )
+
     const trail =
       normalizeTrailGroup(group)
+
+    const center =
+      getGroupCenter(group)
+
+    const county =
+      center
+        ? findCounty(
+            center.latitude,
+            center.longitude
+          )
+        : null
 
     if (
       trail.difficulty_source === "osm"
@@ -173,6 +240,8 @@ export async function importBayAreaTrails() {
           trail.source,
         source_id:
           trail.source_id,
+        county:
+          county,
       })
 
     let geometrySequence = 0

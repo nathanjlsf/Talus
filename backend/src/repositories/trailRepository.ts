@@ -54,11 +54,12 @@ export function searchTrails(filters: {
       (
         name LIKE ?
         OR location LIKE ?
+        OR county LIKE ?
         OR description LIKE ?
       )
     `)
 
-    parameters.push(query, query, query)
+    parameters.push(query, query, query, query)
   }
 
   if (filters.location?.trim()) {
@@ -129,6 +130,7 @@ export function createTrail(trail: {
   water_score?: number | null
   source?: string
   source_id?: string
+  county?: string | null
 }): Trail {
   const statement = db.prepare(
     `
@@ -150,9 +152,10 @@ export function createTrail(trail: {
       solitude_score,
       water_score,
       source,
-      source_id
+      source_id,
+      county
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
   )
 
@@ -174,7 +177,8 @@ export function createTrail(trail: {
     trail.solitude_score ?? null,
     trail.water_score ?? null,
     trail.source ?? null,
-    trail.source_id ?? null
+    trail.source_id ?? null,
+    trail.county?? null
   )
 
   return getTrailById(Number(result.lastInsertRowid))!
@@ -212,6 +216,7 @@ export function upsertTrail(trail: {
   water_score?: number | null
   source: string
   source_id: string
+  county?: string | null
 }): {
   trail: Trail
   created: boolean
@@ -246,7 +251,8 @@ export function upsertTrail(trail: {
         scenic_score = ?,
         nature_score = ?,
         solitude_score = ?,
-        water_score = ?
+        water_score = ?,
+        county = ?
       WHERE id = ?
       `
     ).run(
@@ -262,6 +268,7 @@ export function upsertTrail(trail: {
       trail.nature_score ?? null,
       trail.solitude_score ?? null,
       trail.water_score ?? null,
+      trail.county ?? null,
       existing.id
     )
 

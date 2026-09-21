@@ -48,7 +48,7 @@ function Compare() {
       try {
         const comparison =
           await getNextComparison(
-            1,
+            9999,
             shownTrailIds
         )
 
@@ -93,7 +93,7 @@ function Compare() {
       setError(null)
 
       await submitComparison(
-        1,
+        9999,
         winner.trail.id,
         loser.trail.id
       )
@@ -116,7 +116,7 @@ function Compare() {
 
       const comparison =
         await getNextComparison(
-          1,
+          9999,
           shownTrailIds
       )
 

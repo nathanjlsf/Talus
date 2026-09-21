@@ -190,6 +190,51 @@ function TrailDetail() {
         </div>
       )}
 
+      <div className="mt-10 max-w-3xl">
+        <h2 className="text-2xl font-semibold">
+          Trail character
+        </h2>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {[
+            { label: "Scenic", value: trail.scenic_score },
+            { label: "Forest", value: trail.forest_score },
+            { label: "Water", value: trail.water_score },
+            { label: "Coastal", value: trail.coastal_score },
+          ]
+            .filter((attribute) => attribute.value !== null)
+            .map((attribute) => {
+              const percentage = Math.round(
+                (attribute.value ?? 0) * 100
+              )
+
+              return (
+                <div
+                  key={attribute.label}
+                  className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-[#526052]">
+                      {attribute.label}
+                    </p>
+
+                    <p className="text-sm font-semibold text-[#314936]">
+                      {percentage}%
+                    </p>
+                  </div>
+
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
+                    <div
+                      className="h-full rounded-full bg-[#526b4f]"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+        </div>
+      </div>
+
       {recommendation && (
         <div className="mt-10 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7">
           <div className="flex items-center gap-3">

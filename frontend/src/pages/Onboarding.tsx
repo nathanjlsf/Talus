@@ -34,7 +34,7 @@ function Onboarding() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/compare?experience=experienced"
+                window.location.href = "/onboarding/hikes"
               }}
               className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7 text-left transition hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6]"
             >

@@ -61,6 +61,9 @@ function normalizeTerrain(
     case "dirt":
       return 0.5
 
+    case "gravel":
+      return 0.6
+
     case "mixed":
       return 0.75
 
