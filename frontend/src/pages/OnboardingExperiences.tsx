@@ -33,9 +33,6 @@ function OnboardingExperiences() {
         const results = await Promise.all(
           ids.map((id) => getTrail(id))
         )
-
-        console.log("Onboarding trail IDs:", ids)
-        console.log("Onboarding trail results:", results)
         
         setTrails(results)
       } finally {
@@ -58,31 +55,20 @@ function OnboardingExperiences() {
       return
     }
 
-    console.log("Continue clicked")
-    console.log("Trails:", trails)
-    console.log("Ratings:", ratings)
-
     setSaving(true)
 
     try {
       for (const trail of trails) {
-        console.log("Saving trail:", trail.id)
-        console.log("Rating:", ratings[trail.id])
-
         const activity =
           await createActivity({
             user_id: 9999,
             trail_id: trail.id,
           })
 
-        console.log("Created activity:", activity)
-
         await createExperience({
           activity_id: activity.id,
           overall_rating: ratings[trail.id],
         })
-
-        console.log("Created experience for activity:", activity.id)
       }
 
       window.location.href =
