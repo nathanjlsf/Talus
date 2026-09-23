@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react"
 import { ArrowRight, Star } from "lucide-react"
 
-import { getTrail, type Trail } from "../services/api"
+import {
+  createActivity,
+  createExperience,
+  getTrail,
+  type Trail,
+} from "../services/api"
 
 function OnboardingExperiences() {
   const [trails, setTrails] = useState<Trail[]>([])
   const [ratings, setRatings] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function loadTrails() {
@@ -44,8 +50,32 @@ function OnboardingExperiences() {
     }))
   }
 
-  function continueToNextStep() {
-    window.location.href = "/compare?experience=experienced"
+  async function continueToNextStep() {
+    if (!allRated || saving) {
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      for (const trail of trails) {
+        const activity =
+          await createActivity({
+            user_id: 9999,
+            trail_id: trail.id,
+          })
+
+        await createExperience({
+          activity_id: activity.id,
+          overall_rating: ratings[trail.id],
+        })
+      }
+
+      window.location.href =
+        "/compare?experience=experienced"
+    } finally {
+      setSaving(false)
+    }
   }
 
   const allRated =
@@ -142,10 +172,10 @@ function OnboardingExperiences() {
       <div className="mt-10 flex justify-end border-t border-[#d8d2c4] pt-6">
         <button
           onClick={continueToNextStep}
-          disabled={trails.length > 0 && !allRated}
+          disabled={saving || trails.length > 0 && !allRated}
           className="inline-flex items-center gap-2 rounded-xl bg-[#314936] px-5 py-3 font-medium text-white transition hover:bg-[#263a2b] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Continue
+          {saving ? "Saving..." : "Continue"}
           <ArrowRight size={17} />
         </button>
       </div>

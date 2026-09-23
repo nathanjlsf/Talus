@@ -24,6 +24,7 @@ import {
 } from "./normalizeGroup.js"
 
 import {
+  getAllTrails,
   upsertTrail,
 } from "../../repositories/trailRepository.js"
 
@@ -38,6 +39,8 @@ import {
 import {
   getTrailCenter,
 } from "../../repositories/trailGeometryRepository.js"
+
+import db from "../../db/database.js"
 
 function getGroupCenter(
   group: {
@@ -81,6 +84,92 @@ function getGroupCenter(
     longitude:
       totalLongitude / points.length,
   }
+}
+
+function cleanupStaleOsmTrails(
+  staleTrails: Array<{
+    id: number
+  }>
+): number {
+  const protectedTrailIds = new Set<number>()
+
+  const activityTrails = db
+    .prepare(
+      `
+      SELECT DISTINCT trail_id
+      FROM activities
+      `
+    )
+    .all() as Array<{
+      trail_id: number
+    }>
+
+  for (const row of activityTrails) {
+    protectedTrailIds.add(row.trail_id)
+  }
+
+  const comparisonTrails = db
+    .prepare(
+      `
+      SELECT winner_trail_id AS trail_id
+      FROM preference_comparisons
+
+      UNION
+
+      SELECT loser_trail_id AS trail_id
+      FROM preference_comparisons
+      `
+    )
+    .all() as Array<{
+      trail_id: number
+    }>
+
+  for (const row of comparisonTrails) {
+    protectedTrailIds.add(row.trail_id)
+  }
+
+  const trailsToDelete =
+    staleTrails.filter(
+      (trail) =>
+        !protectedTrailIds.has(trail.id)
+    )
+
+  const deleteGeometry =
+    db.prepare(
+      `
+      DELETE FROM trail_geometry
+      WHERE trail_id = ?
+      `
+    )
+
+  const deleteTrail =
+    db.prepare(
+      `
+      DELETE FROM trails
+      WHERE id = ?
+        AND source = 'openstreetmap'
+      `
+    )
+
+  const cleanup =
+    db.transaction(() => {
+      for (const trail of trailsToDelete) {
+        deleteGeometry.run(trail.id)
+        deleteTrail.run(trail.id)
+      }
+    })
+
+  cleanup()
+
+  console.log(
+    `Removed ${trailsToDelete.length} stale OSM trails`
+  )
+
+  console.log(
+    `Preserved ${staleTrails.length - trailsToDelete.length} stale OSM trails with user data`
+  )
+
+  return trailsToDelete.length
 }
 
 export async function importBayAreaTrails() {
@@ -182,6 +271,43 @@ export async function importBayAreaTrails() {
     `Importing ${candidates.length} trails`
   )
 
+  const currentSourceIds = new Set(
+    candidates.flatMap((group) =>
+      group.ways.map((way) =>
+        String(way.id)
+      )
+    )
+  )
+
+  const existingOsmTrails =
+    getAllTrails().filter(
+      (trail) =>
+        trail.source === "openstreetmap" &&
+        trail.source_id !== null &&
+        trail.source_id !== undefined
+    )
+
+  const staleTrails =
+    existingOsmTrails.filter((trail) => {
+      const sourceIds =
+        trail.source_id!.split(",")
+
+      return sourceIds.every(
+        (sourceId) =>
+          !currentSourceIds.has(
+            sourceId
+          )
+      )
+    })
+
+  console.log(
+    `Existing OSM trails: ${existingOsmTrails.length}`
+  )
+
+  console.log(
+    `Stale OSM trails: ${staleTrails.length}`
+  )
+
   let created = 0
   let updated = 0
   let osmDifficulty = 0
@@ -269,6 +395,8 @@ export async function importBayAreaTrails() {
       updated++
     }
   }
+
+  cleanupStaleOsmTrails(staleTrails)
 
   console.log("")
   console.log("Import complete")
