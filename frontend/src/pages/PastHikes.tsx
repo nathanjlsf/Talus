@@ -141,7 +141,7 @@ function PastHikes() {
         )}
       </div>
 
-      <div className="mt-10 flex items-center justify-between border-t border-[#d8d2c4] pt-6">
+      <div className="sticky bottom-0 z-10 mt-10 flex items-center justify-between border-t border-[#d8d2c4] bg-[#f4f0e6] py-4 shadow-[0_-4px_12px_rbga(38,58,43,0.04)]">
         <button
           onClick={continueToNextStep}
           className="text-sm font-medium text-[#687565] hover:text-[#314936]"

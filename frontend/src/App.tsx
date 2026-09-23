@@ -34,7 +34,7 @@ function App() {
     page = <Experience />
   } else if (path === "/onboarding/hikes") {
     page = <PastHikes />
-  } else if (path === "/onbaording/experiences") {
+  } else if (path === "/onboarding/experiences") {
     page = <OnboardingExperiences />
   } else {
     page = <Rankings />
