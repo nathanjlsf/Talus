@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import TrailCard from "../components/TrailCard"
 import TrailResultCard from "../components/TrailResultCard"
 import {
+  getCurrentTalusUser,
   getRanking,
   getTrails,
   type RankedTrail,
@@ -26,8 +27,9 @@ function Rankings() {
   useEffect(() => {
     async function loadRanking() {
       try {
-        const data = await getRanking(9999)
-        setRanking(data)
+        const user = await getCurrentTalusUser()
+        const results = await getRanking(user.id)
+        setRanking(results)
       } catch (error) {
         setError(
           error instanceof Error

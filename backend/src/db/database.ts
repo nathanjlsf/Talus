@@ -141,6 +141,12 @@ addColumnIfMissing(
   "TEXT"
 )
 
+addColumnIfMissing(
+  "users",
+  "supabase_user_id",
+  "TEXT"
+)
+
 const trailUpdates = [
   {
     name: "Lands End Trail",

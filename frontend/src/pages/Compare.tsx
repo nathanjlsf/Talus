@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Mountain, TrendingUp } from "lucide-react"
 
 import {
+  getCurrentTalusUser,
   getNextComparison,
   submitComparison,
   type RankedTrail,
@@ -10,6 +11,8 @@ import {
 const INITIAL_COMPARISONS = 5
 
 function Compare() {
+  const [userId, setUserId] = useState<number | null>(null)
+
   const [leftTrail, setLeftTrail] =
     useState<RankedTrail | null>(null)
 
@@ -45,10 +48,13 @@ function Compare() {
 
   useEffect(() => {
     async function loadComparison() {
+      const user = await getCurrentTalusUser()
+      setUserId(user.id)
+
       try {
         const comparison =
           await getNextComparison(
-            9999,
+            user.id,
             shownTrailIds
         )
 
@@ -92,8 +98,12 @@ function Compare() {
       setSubmitting(true)
       setError(null)
 
+      if (userId === null) {
+        throw new Error("User not found")
+      }
+
       await submitComparison(
-        9999,
+        userId,
         winner.trail.id,
         loser.trail.id
       )
@@ -116,7 +126,7 @@ function Compare() {
 
       const comparison =
         await getNextComparison(
-          9999,
+          userId,
           shownTrailIds
       )
 

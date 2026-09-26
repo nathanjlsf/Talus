@@ -10,13 +10,16 @@ import Onboarding from "./pages/Onboarding"
 import Experience from "./pages/Experience"
 import PastHikes from "./pages/PastHikes"
 import OnboardingExperiences from "./pages/OnboardingExperiences"
+import Auth from "./pages/Auth"
 
 function App() {
   const path = window.location.pathname
 
   let page
 
-  if (path === "/") {
+  if (path === "/auth") {
+    page = <Auth />
+  } else if (path === "/") {
     page = <Home />
   } else if (path.startsWith("/trails/")) {
     page = <TrailDetail />

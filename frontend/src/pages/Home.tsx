@@ -3,6 +3,7 @@ import { ArrowRight, Compass, GitCompare } from "lucide-react"
 
 import {
   getActivities,
+  getCurrentTalusUser,
   getPreferenceInsights,
   getRanking,
   type Activity,
@@ -37,11 +38,13 @@ function Home() {
 
   useEffect(() => {
     async function loadHomeData() {
+      const user = await getCurrentTalusUser()
+
       try {
         const [rankingData, insightData, activityData] = await Promise.all([
-          getRanking(9999),
-          getPreferenceInsights(9999),
-          getActivities(9999),
+          getRanking(user.id),
+          getPreferenceInsights(user.id),
+          getActivities(user.id),
         ])
 
         setRanking(rankingData)

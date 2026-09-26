@@ -4,6 +4,7 @@ import { ArrowRight, Star } from "lucide-react"
 import {
   createActivity,
   createExperience,
+  getCurrentTalusUser,
   getTrail,
   type Trail,
 } from "../services/api"
@@ -59,9 +60,11 @@ function OnboardingExperiences() {
 
     try {
       for (const trail of trails) {
+        const user = await getCurrentTalusUser()
+
         const activity =
           await createActivity({
-            user_id: 9999,
+            user_id: user.id,
             trail_id: trail.id,
           })
 

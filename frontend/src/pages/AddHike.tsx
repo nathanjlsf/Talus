@@ -3,6 +3,7 @@ import { Check, Mountain } from "lucide-react"
 
 import {
   createActivity,
+  getCurrentTalusUser,
   getTrails,
   type Trail,
 } from "../services/api"
@@ -74,8 +75,10 @@ function AddHike() {
       setError(null)
       setSaved(false)
 
+      const user = await getCurrentTalusUser()
+
       await createActivity({
-        user_id: 1,
+        user_id: user.id,
         trail_id: Number(trailId),
         distance_miles: selectedTrail?.distance_miles,
         elevation_gain_feet:

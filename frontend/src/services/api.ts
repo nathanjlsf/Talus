@@ -1,3 +1,5 @@
+import { getCurrentUser } from "./supabase"
+
 const API_BASE_URL = "http://localhost:3000/api"
 
 export interface Trail {
@@ -357,4 +359,52 @@ export async function getNextComparison(
   }
 
   return response.json()
+}
+
+export async function createTalusUser(input: {
+  name: string
+  supabase_user_id: string
+}): Promise<{ id: number; name: string; supabase_user_id: string }> {
+  const response = await fetch(`${API_BASE_URL}/users`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to create Talus user")
+  }
+
+  return response.json()
+}
+
+export async function getTalusUser(
+  supabaseUserId: string,
+): Promise<{
+  id: number
+  name: string
+  supabase_user_id: string
+  created_at: string
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/users/${supabaseUserId}`,
+  )
+
+  if (!response.ok) {
+    throw new Error("Talus user not found")
+  }
+
+  return response.json()
+}
+
+export async function getCurrentTalusUser() {
+  const supabaseUser = await getCurrentUser()
+
+  if (!supabaseUser) {
+    throw new Error("No authenticated user")
+  }
+
+  return getTalusUser(supabaseUser.id)
 }

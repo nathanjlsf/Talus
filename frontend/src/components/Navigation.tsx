@@ -5,7 +5,14 @@ import {
   Dna,
 } from "lucide-react"
 
+import { supabase } from "../services/supabase"
+
 function Navigation() {
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    window.location.href = "/auth"
+  }
+
   return (
     <nav className="border-b border-[#d8d2c4] bg-[#f3efe4]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
@@ -48,6 +55,14 @@ function Navigation() {
             <Dna size={16} />
             Hike DNA
           </a>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-full px-4 py-2 text-sm font-medium text-[#687565] transition hover:bg-[#e8e3d6] hover:text-[#314936]"
+          >
+            Log out
+          </button>
         </div>
       </div>
     </nav>
