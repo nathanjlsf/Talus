@@ -11,6 +11,8 @@ import Experience from "./pages/Experience"
 import PastHikes from "./pages/PastHikes"
 import OnboardingExperiences from "./pages/OnboardingExperiences"
 import Auth from "./pages/Auth"
+import ProtectedRoute from "./components/ProtectedRoute"
+import PublicRoute from "./components/PublicRoute"
 
 function App() {
   const path = window.location.pathname
@@ -18,29 +20,75 @@ function App() {
   let page
 
   if (path === "/auth") {
-    page = <Auth />
+    page = (
+      <PublicRoute>
+        <Auth />
+      </PublicRoute>)
   } else if (path === "/") {
-    page = <Home />
+    page = (
+      <ProtectedRoute>
+        <Home />
+      </ProtectedRoute>)
   } else if (path.startsWith("/trails/")) {
-    page = <TrailDetail />
+    page = (
+      <ProtectedRoute>
+        <TrailDetail />
+      </ProtectedRoute>
+    )
   } else if (path === "/onboarding") {
-    page = <Onboarding />
+    page = (
+      <ProtectedRoute>
+        <Onboarding />
+      </ProtectedRoute>
+    )
   } else if (path === "/compare") {
-    page = <Compare />
+    page = (
+      <ProtectedRoute>
+        <Compare />
+      </ProtectedRoute>
+    )
   } else if (path === "/add-hike") {
-    page = <AddHike />
+    page = (
+      <ProtectedRoute>
+        <AddHike />
+      </ProtectedRoute>
+    )
   } else if (path === "/hike-dna") {
-    page = <HikeDNA />
+    page = (
+      <ProtectedRoute>
+        <HikeDNA />
+      </ProtectedRoute>
+    )
   } else if (path === "/activities") {
-    page = <Activities />
+    page = (
+      <ProtectedRoute>
+        <Activities />
+      </ProtectedRoute>
+    )
   } else if (path.startsWith("/activities/") && path.endsWith("/experience")) {
-    page = <Experience />
+    page = (
+      <ProtectedRoute>
+        <Experience />
+      </ProtectedRoute>
+    )
   } else if (path === "/onboarding/hikes") {
-    page = <PastHikes />
+    page = (
+      <ProtectedRoute>
+        <PastHikes />
+      </ProtectedRoute>
+    )
   } else if (path === "/onboarding/experiences") {
-    page = <OnboardingExperiences />
+    page = (
+      <ProtectedRoute>
+        <OnboardingExperiences />
+      </ProtectedRoute>
+    )
   } else {
-    page = <Rankings />
+    page = (
+      <ProtectedRoute>
+        <Rankings />
+      </ProtectedRoute>
+    )
   }
 
   return <Layout>{page}</Layout>
