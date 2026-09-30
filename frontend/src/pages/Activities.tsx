@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 
 import {
   getActivities,
+  getCurrentTalusUser,
   type Activity,
 } from "../services/api"
 
@@ -45,12 +46,20 @@ function RatingSummary({
 function Activities() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadActivities() {
       try {
-        const data = await getActivities(1)
+        const user = await getCurrentTalusUser()
+        const data = await getActivities(user.id)
         setActivities(data)
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load your hikes"
+        )
       } finally {
         setLoading(false)
       }
@@ -80,7 +89,19 @@ function Activities() {
         </p>
       )}
 
-      {!loading && activities.length === 0 && (
+      {error && (
+        <div className="mt-10 rounded-2xl border border-[#c9bfb0] bg-[#e8e3d6] p-6">
+          <p className="font-medium">
+            Couldn’t load your hikes.
+          </p>
+
+          <p className="mt-2 text-sm text-[#687565]">
+            Make sure the Talus backend is running and try again.
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && activities.length === 0 && (
         <div className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8">
           <h2 className="text-2xl font-semibold">
             No hikes yet.

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ArrowRight, Compass, GitCompare } from "lucide-react"
+import { ArrowRight, Compass } from "lucide-react"
 
 import {
   getActivities,
@@ -301,7 +301,7 @@ function Home() {
         </div>
         )}
 
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
+      <div className="mt-8">
         <button
           onClick={() => {
             window.location.href = "/trails"
@@ -321,32 +321,6 @@ function Home() {
 
           <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#314936]">
             Discover
-            <ArrowRight
-              size={15}
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </span>
-        </button>
-
-        <button
-          onClick={() => {
-            window.location.href = "/compare"
-          }}
-          className="group rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-6 text-left transition hover:bg-[#e4dfd2]"
-        >
-          <GitCompare size={22} className="text-[#314936]" />
-
-          <h2 className="mt-4 text-xl font-semibold">
-            Compare trails
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-[#687565]">
-            Tell Talus which trail you'd rather hike and improve your
-            recommendations.
-          </p>
-
-          <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#314936]">
-            Start comparing
             <ArrowRight
               size={15}
               className="transition-transform group-hover:translate-x-1"

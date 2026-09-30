@@ -11,11 +11,13 @@ import {
 function AddHike() {
   const [trails, setTrails] = useState<Trail[]>([])
   const [trailId, setTrailId] = useState("")
+  const [trailSearch, setTrailSearch] = useState("")
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [savedActivityId, setSavedActivityId] = useState<number | null>(null)
 
   useEffect(() => {
     async function loadTrails() {
@@ -58,8 +60,6 @@ function AddHike() {
     (trail) => trail.id === Number(trailId)
   )
 
-  const isContextual = Boolean(selectedTrail)
-
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
@@ -77,7 +77,7 @@ function AddHike() {
 
       const user = await getCurrentTalusUser()
 
-      await createActivity({
+      const activity = await createActivity({
         user_id: user.id,
         trail_id: Number(trailId),
         distance_miles: selectedTrail?.distance_miles,
@@ -86,7 +86,9 @@ function AddHike() {
       })
 
       setSaved(true)
+      setSavedActivityId(activity.id)
       setTrailId("")
+      setTrailSearch("")
     } catch (error) {
       setError(
         error instanceof Error
@@ -112,7 +114,7 @@ function AddHike() {
     <section className="mx-auto max-w-3xl">
       <div>
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-          {isContextual ? "Hiking history" : "Hiking history"}
+          Hiking History
         </p>
 
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">
@@ -134,33 +136,58 @@ function AddHike() {
         {!selectedTrail && (
           <div>
             <label
-              htmlFor="trail"
+              htmlFor="trail-search"
               className="text-sm font-medium text-[#314936]"
             >
-              Trail
+              Find your trail
             </label>
 
-            <select
-              id="trail"
-              value={trailId}
-              onChange={(event) =>
-                setTrailId(event.target.value)
-              }
-              className="mt-2 w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition focus:border-[#314936]"
-            >
-              <option value="">
-                Select a trail...
-              </option>
+            <input
+              id="trail-search"
+              type="search"
+              value={trailSearch}
+              onChange={(event) => setTrailSearch(event.target.value)}
+              placeholder="Search by trail name or location..."
+              className="mt-2 w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition placeholder:text-[#8b8f83] focus:border-[#314936]"
+            />
 
-              {trails.map((trail) => (
-                <option
-                  key={trail.id}
-                  value={trail.id}
-                >
-                  {trail.name}
+            <div className="mt-3">
+              <select
+                id="trail"
+                value={trailId}
+                onChange={(event) => setTrailId(event.target.value)}
+                className="w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition focus:border-[#314936]"
+              >
+                <option value="">
+                  {trailSearch
+                    ? "Select a matching trail..."
+                    : "Select a trail..."}
                 </option>
-              ))}
-            </select>
+
+                {trails
+                  .filter((trail) => {
+                    const query = trailSearch.trim().toLowerCase()
+
+                    if (!query) {
+                      return true
+                    }
+
+                    return (
+                      trail.name.toLowerCase().includes(query) ||
+                      trail.location?.toLowerCase().includes(query)
+                    )
+                  })
+                  .map((trail) => (
+                    <option
+                      key={trail.id}
+                      value={trail.id}
+                    >
+                      {trail.name}
+                      {trail.location ? ` — ${trail.location}` : ""}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
         )}
 
@@ -213,8 +240,7 @@ function AddHike() {
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-[#526052]">
-                  You can tell Talus how it went from your hike
-                  history.
+                  Add your experience to help Talus learn what you enjoy.
                 </p>
               </div>
             </div>
@@ -223,7 +249,10 @@ function AddHike() {
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href = "/activities"
+                  if (savedActivityId) {
+                    window.location.href =
+                      `/activities/${savedActivityId}/experience`
+                  }
                 }}
                 className="rounded-full bg-[#314936] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#263b2b]"
               >

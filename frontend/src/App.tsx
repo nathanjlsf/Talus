@@ -1,5 +1,5 @@
 import Layout from "./components/Layout"
-import Rankings from "./pages/Rankings"
+import Explore from "./pages/Explore"
 import Compare from "./pages/Compare"
 import AddHike from "./pages/AddHike"
 import HikeDNA from "./pages/HikeDNA"
@@ -86,7 +86,7 @@ function App() {
   } else {
     page = (
       <ProtectedRoute>
-        <Rankings />
+        <Explore />
       </ProtectedRoute>
     )
   }
