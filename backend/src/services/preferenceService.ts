@@ -3,6 +3,8 @@ import {
   getComparisonsForUser,
 } from "../repositories/comparisonRepository.js"
 
+import db from "../db/database.js"
+
 import {
   getAllTrails,
 } from "../repositories/trailRepository.js"
@@ -58,7 +60,8 @@ export function recordComparison(comparison: {
 }
 
 export function calculateUserPreferences(
-  userId: number
+  userId: number,
+  trails = getAllTrails()
 ): UserPreference[] {
   const comparisons =
     getComparisonsForUser(userId)
@@ -71,8 +74,6 @@ export function calculateUserPreferences(
       loserTrailId:
         comparison.loser_trail_id,
     }))
-
-  const trails = getAllTrails()
 
   return calculatePreferences(
     rankingComparisons,
@@ -114,8 +115,10 @@ export function calculateUserExperienceSignal(
 export function calculateCombinedPreferences(
   userId: number
 ): UserPreference[] {
+  const trails = getAllTrails()
+
   const pairwisePreferences =
-    calculateUserPreferences(userId)
+    calculateUserPreferences(userId, trails)
 
   const experiences =
     listExperiencesForUser(userId)
@@ -127,7 +130,7 @@ export function calculateCombinedPreferences(
     getComparisonsForUser(userId)
 
   const trailsById = new Map(
-    getAllTrails().map((trail) => [
+    trails.map((trail) => [
       trail.id,
       trail,
     ])
@@ -248,4 +251,39 @@ export function calculateCombinedPreferences(
     combinedPreferences,
     preferredRanges
   )
+}
+
+export function backfillMissingPreferredRanges(): number {
+  const rows = db
+    .prepare(`
+      SELECT DISTINCT preferences.user_id AS user_id
+      FROM preferences
+      WHERE preferences.attribute IN (
+        'distance',
+        'elevation',
+        'difficulty'
+      )
+        AND preferences.target IS NULL
+        AND (
+          EXISTS (
+            SELECT 1
+            FROM preference_comparisons
+            WHERE preference_comparisons.user_id = preferences.user_id
+          )
+          OR EXISTS (
+            SELECT 1
+            FROM experiences
+            JOIN activities
+              ON activities.id = experiences.activity_id
+            WHERE activities.user_id = preferences.user_id
+          )
+        )
+    `)
+    .all() as Array<{ user_id: number }>
+
+  for (const row of rows) {
+    updateUserPreferences(row.user_id)
+  }
+
+  return rows.length
 }

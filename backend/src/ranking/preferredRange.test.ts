@@ -72,6 +72,48 @@ describe("calculatePreferredRanges", () => {
     ).toBeGreaterThan(one[0]!.confidence)
   })
 
+  it("shifts the sweet spot away from rejected trails", () => {
+    const likedOnly = calculatePreferredRanges([
+      { trail: trail(6, 1000), weight: 1 },
+      { trail: trail(6, 1000), weight: 1 },
+    ])
+
+    const withRejections = calculatePreferredRanges([
+      { trail: trail(6, 1000), weight: 1 },
+      { trail: trail(6, 1000), weight: 1 },
+      { trail: trail(10, 2000), weight: -0.35 },
+      { trail: trail(10, 2000), weight: -0.35 },
+    ])
+
+    const likedDistance = likedOnly.find(
+      (range) => range.attribute === "distance"
+    )
+
+    const rejectedDistance = withRejections.find(
+      (range) => range.attribute === "distance"
+    )
+
+    expect(rejectedDistance!.target).toBeLessThan(
+      likedDistance!.target
+    )
+    expect(rejectedDistance!.confidence).toBe(
+      likedDistance!.confidence
+    )
+  })
+
+  it("leaves the sweet spot unchanged when a rejection matches it", () => {
+    const ranges = calculatePreferredRanges([
+      { trail: trail(6, 1000), weight: 1 },
+      { trail: trail(6, 1000), weight: -0.35 },
+    ])
+
+    expect(
+      ranges.find(
+        (range) => range.attribute === "distance"
+      )?.target
+    ).toBeCloseTo(0.6)
+  })
+
   it("skips attributes without usable evidence", () => {
     const ranges = calculatePreferredRanges([
       {
@@ -107,7 +149,7 @@ describe("buildLikedTrails", () => {
 
     expect(
       liked.map((item) => item.weight)
-    ).toEqual([1, 1, 0.5])
+    ).toEqual([1, -0.35, 1, 0.5, -0.5])
 
     expect(liked[0]!.trail.distance_miles).toBe(6)
   })
@@ -147,7 +189,7 @@ describe("applyPreferredRanges", () => {
     expect(result[0]).toMatchObject({
       target: 0.6,
       tolerance: 0.1,
-      confidence: 0.6,
+      confidence: 0.3,
     })
 
     expect(result[1]).toMatchObject({

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router"
 import { ArrowRight, Check, Search } from "lucide-react"
 
 import { getTrails, type Trail } from "../services/api"
+import { trailMetaLine } from "../trailSummary"
 
 const MAX_VISIBLE_TRAILS = 50
 
@@ -126,9 +127,7 @@ function PastHikes() {
                   </h2>
 
                   <p className="mt-1 text-sm text-[#687565]">
-                    {trail.location || "Location unknown"} ·{" "}
-                    {trail.distance_miles.toFixed(1)} mi ·{" "}
-                    {trail.difficulty}
+                    {trailMetaLine(trail)}
                   </p>
                 </div>
 

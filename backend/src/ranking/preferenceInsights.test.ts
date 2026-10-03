@@ -99,4 +99,27 @@ describe("generatePreferenceInsights", () => {
       "You usually go for moderate trails."
     )
   })
+
+  it("describes a taste for rugged terrain", () => {
+    const insights =
+      generatePreferenceInsights([
+        {
+          attribute: "terrain",
+          score: 80,
+          confidence: 0.8,
+        },
+        {
+          attribute: "terrain",
+          score: 20,
+          confidence: 0.8,
+        },
+      ])
+
+    expect(insights[0]!.message).toBe(
+      "You tend to prefer more rugged terrain."
+    )
+    expect(insights[1]!.message).toBe(
+      "You tend to prefer gentler terrain."
+    )
+  })
 })

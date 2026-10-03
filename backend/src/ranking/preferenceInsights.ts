@@ -45,6 +45,28 @@ function rangeMessage(
   }
 }
 
+function highMessage(
+  attribute: UserPreference["attribute"],
+  label: string
+): string {
+  if (attribute === "terrain") {
+    return "You tend to prefer more rugged terrain."
+  }
+
+  return `You tend to prefer ${label}.`
+}
+
+function lowMessage(
+  attribute: UserPreference["attribute"],
+  label: string
+): string {
+  if (attribute === "terrain") {
+    return "You tend to prefer gentler terrain."
+  }
+
+  return `You tend to prefer trails with less ${label}.`
+}
+
 export function generatePreferenceInsights(
   preferences: UserPreference[]
 ): PreferenceInsight[] {
@@ -82,7 +104,10 @@ export function generatePreferenceInsights(
         attribute: preference.attribute,
         label,
         direction: "high",
-        message: `You tend to prefer ${label}.`,
+        message: highMessage(
+          preference.attribute,
+          label
+        ),
       }
     }
 
@@ -91,7 +116,10 @@ export function generatePreferenceInsights(
         attribute: preference.attribute,
         label,
         direction: "low",
-        message: `You tend to prefer trails with less ${label}.`,
+        message: lowMessage(
+          preference.attribute,
+          label
+        ),
       }
     }
 

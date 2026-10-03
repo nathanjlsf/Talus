@@ -8,6 +8,8 @@ import preferenceRoutes from "./routes/preferences.js"
 import activityRoutes from "./routes/activities.js"
 import experienceRoutes from "./routes/experiences.js"
 import usersRouter from "./routes/users.js"
+import { backfillEstimatedDifficulty } from "./import/osm/applyEstimatedDifficulty.js"
+import { backfillMissingPreferredRanges } from "./services/preferenceService.js"
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3000
@@ -41,6 +43,25 @@ app.use("/api/preferences", preferenceRoutes)
 app.use("/api/activities", activityRoutes)
 app.use("/api/experiences", experienceRoutes)
 app.use("/api/users", usersRouter)
+
+try {
+  const estimated =
+    backfillEstimatedDifficulty()
+
+  const preferences =
+    backfillMissingPreferredRanges()
+
+  if (estimated > 0 || preferences > 0) {
+    console.log(
+      `Backfilled ${estimated} trail difficulties and ${preferences} preference profiles.`
+    )
+  }
+} catch (error) {
+  console.error(
+    "Startup backfill failed:",
+    error
+  )
+}
 
 app.listen(PORT, () => {
   console.log(`Talus API running on port ${PORT}`)

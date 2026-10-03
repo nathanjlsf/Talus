@@ -309,4 +309,23 @@ describe("selectComparisonPairs", () => {
         secondTrailId: 3,
     })
   })
+
+  it("still returns a pair from a large trail catalog", () => {
+    const many = Array.from(
+      { length: 500 },
+      (_, index) => ({
+        ...trails[0]!,
+        id: index + 1,
+        distance_miles: (index % 12) + 1,
+        elevation_gain_feet: (index % 8) * 300,
+      })
+    )
+
+    const pairs = selectComparisonPairs(many, 1)
+
+    expect(pairs).toHaveLength(1)
+    expect(pairs[0]!.firstTrailId).not.toBe(
+      pairs[0]!.secondTrailId
+    )
+  })
 })

@@ -9,6 +9,7 @@ import {
   getTrail,
   type Trail,
 } from "../services/api"
+import { trailMetaLine } from "../trailSummary"
 
 function OnboardingExperiences() {
   const navigate = useNavigate()
@@ -127,8 +128,7 @@ function OnboardingExperiences() {
                 </h2>
 
                 <p className="mt-2 text-sm text-[#687565]">
-                  {trail.location || "Location unknown"} ·{" "}
-                  {trail.distance_miles.toFixed(1)} mi · {trail.difficulty}
+                  {trailMetaLine(trail)}
                 </p>
 
                 <div className="mt-6">

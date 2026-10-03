@@ -43,7 +43,10 @@ router.get("/next/:userId", (req, res) => {
       : []
 
   const preferences =
-    calculateUserPreferences(userId)
+    calculateUserPreferences(
+      userId,
+      trails
+    )
 
   const seenPairs =
     comparisons.map((comparison) => ({

@@ -4,7 +4,6 @@ import type { UserPreference } from "./preferenceTypes.js"
 import {
   calculatePairInformation,
 } from "./comparisonInformation.js"
-import { diff } from "node:util"
 
 export interface ComparisonPair {
   firstTrailId: number
@@ -158,6 +157,40 @@ function getPairKey(
   ].join(":")
 }
 
+const CANDIDATE_LIMIT = 180
+
+function limitCandidates(
+  trails: Trail[]
+): Trail[] {
+  if (trails.length <= CANDIDATE_LIMIT) {
+    return trails
+  }
+
+  const sorted = [...trails].sort(
+    (first, second) => first.id - second.id
+  )
+
+  const step = sorted.length / CANDIDATE_LIMIT
+  const indexes = new Set<number>()
+
+  for (
+    let index = 0;
+    index < CANDIDATE_LIMIT;
+    index += 1
+  ) {
+    indexes.add(
+      Math.min(
+        sorted.length - 1,
+        Math.floor(index * step)
+      )
+    )
+  }
+
+  return [...indexes]
+    .sort((first, second) => first - second)
+    .map((index) => sorted[index]!)
+}
+
 export function selectComparisonPairs(
   trails: Trail[],
   count: number,
@@ -178,39 +211,66 @@ export function selectComparisonPairs(
   const excludedTrailIdSet =
     new Set(excludedTrailIds)
 
-  const pairs: Array<
+  const candidates = limitCandidates(
+    trails.filter(
+      (trail) =>
+        !excludedTrailIdSet.has(trail.id)
+    )
+  )
+
+  const best: Array<
     ComparisonPair & {
       score: number
     }
   > = []
 
+  function consider(
+    pair: ComparisonPair & {
+      score: number
+    }
+  ) {
+    const insertAt = best.findIndex(
+      (item) => pair.score > item.score
+    )
+
+    if (best.length < count) {
+      if (insertAt === -1) {
+        best.push(pair)
+      } else {
+        best.splice(insertAt, 0, pair)
+      }
+
+      return
+    }
+
+    if (insertAt === -1) {
+      return
+    }
+
+    best.splice(insertAt, 0, pair)
+    best.pop()
+  }
+
   for (
     let firstIndex = 0;
-    firstIndex < trails.length;
+    firstIndex < candidates.length;
     firstIndex += 1
   ) {
     for (
       let secondIndex =
         firstIndex + 1;
-      secondIndex < trails.length;
+      secondIndex < candidates.length;
       secondIndex += 1
     ) {
       const first =
-        trails[firstIndex]
+        candidates[firstIndex]
 
       const second =
-        trails[secondIndex]
+        candidates[secondIndex]
 
       if (
         first === undefined ||
         second === undefined
-      ) {
-        continue
-      }
-
-      if (
-        excludedTrailIdSet.has(first.id) ||
-        excludedTrailIdSet.has(second.id)
       ) {
         continue
       }
@@ -243,7 +303,7 @@ export function selectComparisonPairs(
       const comparisonNumber =
         seenPairs.length
 
-      const targetDifferece =
+      const targetDifference =
         comparisonNumber % 4 === 0
           ? 0.85
           : comparisonNumber % 4 === 1
@@ -254,16 +314,16 @@ export function selectComparisonPairs(
 
       const differencePreference =
         -Math.abs(
-          difference - targetDifferece
+          difference - targetDifference
         )
-      
+
       const score =
         preferences.length > 0
           ? information +
             differencePreference * 0.5
           : differencePreference
 
-      pairs.push({
+      consider({
         firstTrailId: first.id,
         secondTrailId: second.id,
         score,
@@ -271,20 +331,13 @@ export function selectComparisonPairs(
     }
   }
 
-  return pairs
-    .sort(
-      (first, second) =>
-        second.score -
-        first.score
-    )
-    .slice(0, count)
-    .map(
-      ({
-        firstTrailId,
-        secondTrailId,
-      }) => ({
-        firstTrailId,
-        secondTrailId,
-      })
-    )
+  return best.map(
+    ({
+      firstTrailId,
+      secondTrailId,
+    }) => ({
+      firstTrailId,
+      secondTrailId,
+    })
+  )
 }

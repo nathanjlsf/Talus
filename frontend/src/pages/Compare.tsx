@@ -8,6 +8,7 @@ import {
   submitComparison,
   type RankedTrail,
 } from "../services/api"
+import { trailPlace } from "../trailSummary"
 
 const INITIAL_COMPARISONS = 5
 
@@ -323,6 +324,8 @@ function TrailChoice({
   disabled,
   onChoose,
 }: TrailChoiceProps) {
+  const place = trailPlace(trail.trail)
+
   return (
     <button
       type="button"
@@ -340,9 +343,9 @@ function TrailChoice({
             {trail.trail.name}
           </h2>
 
-          {trail.trail.location && (
+          {place && (
             <p className="mt-1 text-sm text-[#687565]">
-              {trail.trail.location}
+              {place}
             </p>
           )}
         </div>
@@ -368,9 +371,11 @@ function TrailChoice({
           ft elevation
         </span>
 
-        <span>
-          {trail.trail.difficulty}
-        </span>
+        {trail.trail.difficulty.toLowerCase() !== "unknown" && (
+          <span>
+            {trail.trail.difficulty}
+          </span>
+        )}
 
         <span>
           {trail.trail.estimated_time_minutes < 60

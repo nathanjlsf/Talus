@@ -7,6 +7,7 @@ export interface Trail {
   id: number
   name: string
   location: string | null
+  county?: string | null
   park_name: string | null
   park_type: string | null
   park_source: string | null
@@ -36,6 +37,8 @@ export interface RankedTrail {
     id: number
     name: string
     location: string | null
+    county?: string | null
+    park_name?: string | null
     description: string | null
     distance_miles: number
     estimated_time_minutes: number

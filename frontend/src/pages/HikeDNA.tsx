@@ -306,6 +306,10 @@ function PreferenceCard({
 
   if (range) {
     preferenceLabel = `Your sweet spot: ${range.label}.`
+  } else if (label === "Terrain" && score >= 65) {
+    preferenceLabel = "You tend to prefer more rugged terrain."
+  } else if (label === "Terrain" && score <= 35) {
+    preferenceLabel = "You tend to prefer gentler terrain."
   } else if (score >= 65) {
     preferenceLabel = `You tend to prefer more ${label.toLowerCase()}.`
   } else if (score <= 35) {

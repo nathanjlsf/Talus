@@ -9,6 +9,10 @@ import {
 } from "../../repositories/trailRepository.js"
 
 import {
+  applyEstimatedDifficultyForTrail,
+} from "../osm/applyEstimatedDifficulty.js"
+
+import {
   sampleGeometry,
 } from "./sampleGeometry.js"
 
@@ -139,6 +143,10 @@ async function enrichTrail(
     )
 
     markTrailComplete(
+      trail.id
+    )
+
+    applyEstimatedDifficultyForTrail(
       trail.id
     )
 

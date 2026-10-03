@@ -42,6 +42,11 @@ export const MIN_TOLERANCE: Record<RangeAttribute, number> = {
 
 const MAX_TOLERANCE = 0.5
 
+// A rejected trail pulls the sweet spot away from itself, but cannot
+// outweigh the trails the hiker actually chose.
+const REJECTION_WEIGHT = 0.35
+const MAX_REJECTION_SHARE = 0.5
+
 export function buildLikedTrails(
   comparisons: Comparison[],
   trailsById: Map<number, TrailAttributes>,
@@ -63,6 +68,17 @@ export function buildLikedTrails(
         weight: 1,
       })
     }
+
+    const loser = trailsById.get(
+      comparison.loserTrailId
+    )
+
+    if (loser) {
+      likedTrails.push({
+        trail: loser,
+        weight: -REJECTION_WEIGHT,
+      })
+    }
   }
 
   for (const { trail, rating } of ratedTrails) {
@@ -70,6 +86,11 @@ export function buildLikedTrails(
       likedTrails.push({
         trail,
         weight: (rating - 3) / 2,
+      })
+    } else if (rating <= 2) {
+      likedTrails.push({
+        trail,
+        weight: -((3 - rating) / 2),
       })
     }
   }
@@ -101,7 +122,6 @@ export function applyPreferredRanges(
 
     return {
       ...preference,
-      confidence: range.confidence,
       target: range.target,
       tolerance: range.tolerance,
     }
@@ -125,33 +145,75 @@ export function calculatePreferredRanges(
           weight: number
         } =>
           sample.value !== null &&
-          sample.weight > 0
+          sample.weight !== 0
       )
 
-    const totalWeight = samples.reduce(
+    const liked = samples.filter(
+      (sample) => sample.weight > 0
+    )
+
+    const rejected = samples.filter(
+      (sample) => sample.weight < 0
+    )
+
+    const likedWeight = liked.reduce(
       (sum, sample) => sum + sample.weight,
       0
     )
 
-    if (totalWeight === 0) {
+    if (likedWeight === 0) {
       continue
     }
 
-    const target =
-      samples.reduce(
-        (sum, sample) =>
-          sum + sample.value * sample.weight,
-        0
-      ) / totalWeight
+    const rejectedWeight = rejected.reduce(
+      (sum, sample) => sum - sample.weight,
+      0
+    )
+
+    const rejectionScale =
+      rejectedWeight >
+      likedWeight * MAX_REJECTION_SHARE
+        ? (likedWeight * MAX_REJECTION_SHARE) /
+          rejectedWeight
+        : 1
+
+    const evidence = [
+      ...liked,
+      ...rejected.map((sample) => ({
+        ...sample,
+        weight: sample.weight * rejectionScale,
+      })),
+    ]
+
+    const totalWeight = evidence.reduce(
+      (sum, sample) => sum + sample.weight,
+      0
+    )
+
+    if (totalWeight <= 0) {
+      continue
+    }
+
+    const target = Math.max(
+      0,
+      Math.min(
+        1,
+        evidence.reduce(
+          (sum, sample) =>
+            sum + sample.value * sample.weight,
+          0
+        ) / totalWeight
+      )
+    )
 
     const variance =
-      samples.reduce(
+      liked.reduce(
         (sum, sample) =>
           sum +
           sample.weight *
             (sample.value - target) ** 2,
         0
-      ) / totalWeight
+      ) / likedWeight
 
     const tolerance = Math.min(
       MAX_TOLERANCE,
@@ -163,7 +225,7 @@ export function calculatePreferredRanges(
 
     const confidence = Math.min(
       0.9,
-      1 - Math.exp(-totalWeight / 4)
+      1 - Math.exp(-likedWeight / 4)
     )
 
     ranges.push({
