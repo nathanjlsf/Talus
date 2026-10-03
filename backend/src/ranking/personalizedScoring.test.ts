@@ -300,4 +300,173 @@ describe("calculatePersonalizedScore", () => {
     expect(waterScore).toBeLessThan(50)
     expect(coastalScore).toBeLessThan(50)
   })
+
+  describe("with a learned sweet spot", () => {
+    const baseTrail = {
+      elevation_gain_feet: 1000,
+      difficulty: "Moderate",
+      terrain: "Dirt",
+      scenic_score: 0.5,
+      nature_score: 0.5,
+      solitude_score: 0.5,
+      forest_score: null,
+      water_score: null,
+      coastal_score: null,
+    }
+
+    const sweetSpot = [
+      {
+        attribute: "distance" as const,
+        score: 80,
+        confidence: 0.8,
+        target: 0.6,
+        tolerance: 0.1,
+      },
+    ]
+
+    it("ranks a trail in the sweet spot above longer and shorter trails", () => {
+      const inside = calculatePersonalizedScore(
+        { ...baseTrail, distance_miles: 6 },
+        sweetSpot
+      )
+
+      const longer = calculatePersonalizedScore(
+        { ...baseTrail, distance_miles: 10 },
+        sweetSpot
+      )
+
+      const shorter = calculatePersonalizedScore(
+        { ...baseTrail, distance_miles: 2 },
+        sweetSpot
+      )
+
+      expect(inside).toBeGreaterThan(longer)
+      expect(inside).toBeGreaterThan(shorter)
+      expect(longer).toBeLessThan(50)
+    })
+
+    it("no longer rewards the longest trail just for being long", () => {
+      const sixMiles = calculatePersonalizedScore(
+        { ...baseTrail, distance_miles: 6 },
+        sweetSpot
+      )
+
+      const tenMiles = calculatePersonalizedScore(
+        { ...baseTrail, distance_miles: 10 },
+        sweetSpot
+      )
+
+      expect(sixMiles).toBeGreaterThan(tenMiles)
+    })
+
+    it("keeps more-is-better for scenery alongside a sweet spot", () => {
+      const preferences = [
+        ...sweetSpot,
+        {
+          attribute: "scenic" as const,
+          score: 90,
+          confidence: 0.8,
+        },
+      ]
+
+      const scenic = calculatePersonalizedScore(
+        {
+          ...baseTrail,
+          distance_miles: 6,
+          scenic_score: 0.95,
+        },
+        preferences
+      )
+
+      const plain = calculatePersonalizedScore(
+        {
+          ...baseTrail,
+          distance_miles: 6,
+          scenic_score: 0.2,
+        },
+        preferences
+      )
+
+      expect(scenic).toBeGreaterThan(plain)
+    })
+  })
+
+  describe("with missing trail attributes", () => {
+    const preferences = [
+      { attribute: "scenic" as const, score: 90, confidence: 0.8 },
+      { attribute: "nature" as const, score: 90, confidence: 0.8 },
+      { attribute: "solitude" as const, score: 90, confidence: 0.8 },
+      { attribute: "water" as const, score: 90, confidence: 0.8 },
+    ]
+
+    const wellTagged = {
+      distance_miles: 5,
+      elevation_gain_feet: 1000,
+      difficulty: "Moderate",
+      terrain: "Dirt",
+      scenic_score: 0.85,
+      nature_score: 0.85,
+      solitude_score: 0.85,
+      water_score: 0.85,
+    }
+
+    const thinlyTagged = {
+      distance_miles: 5,
+      elevation_gain_feet: 0,
+      elevation_status: "pending",
+      difficulty: "Unknown",
+      terrain: null,
+      scenic_score: 1,
+      nature_score: null,
+      solitude_score: null,
+      water_score: null,
+    }
+
+    it("keeps a thinly tagged trail below a well-tagged good match", () => {
+      const wellTaggedScore =
+        calculatePersonalizedScore(
+          wellTagged,
+          preferences
+        )
+
+      const thinlyTaggedScore =
+        calculatePersonalizedScore(
+          thinlyTagged,
+          preferences
+        )
+
+      expect(wellTaggedScore).toBeGreaterThan(
+        thinlyTaggedScore
+      )
+    })
+
+    it("pulls a one-attribute match toward neutral", () => {
+      const score = calculatePersonalizedScore(
+        thinlyTagged,
+        preferences
+      )
+
+      expect(score).toBeGreaterThan(50)
+      expect(score).toBeLessThan(65)
+    })
+
+    it("ignores pending zero elevation instead of treating it as flat", () => {
+      const flatLover = [
+        {
+          attribute: "elevation" as const,
+          score: 50,
+          confidence: 0.8,
+          target: 0.05,
+          tolerance: 0.1,
+        },
+      ]
+
+      expect(
+        calculatePersonalizedScore(
+          thinlyTagged,
+          flatLover
+        )
+      ).toBe(50)
+    })
+  })
 })

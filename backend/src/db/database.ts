@@ -147,6 +147,18 @@ addColumnIfMissing(
   "TEXT"
 )
 
+addColumnIfMissing(
+  "preferences",
+  "target",
+  "REAL"
+)
+
+addColumnIfMissing(
+  "preferences",
+  "tolerance",
+  "REAL"
+)
+
 const trailUpdates = [
   {
     name: "Lands End Trail",

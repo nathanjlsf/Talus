@@ -2,10 +2,14 @@ import type {
   UserPreference,
 } from "./preferenceTypes.js"
 
+import {
+  describePreferredRange,
+} from "./preferredRange.js"
+
 interface PreferenceInsight {
   attribute: UserPreference["attribute"]
   label: string
-  direction: "high" | "low" | "neutral"
+  direction: "high" | "low" | "range" | "neutral"
   message: string
 }
 
@@ -17,6 +21,28 @@ const labels: Record<string, string> = {
   scenic: "scenic views",
   nature: "nature",
   solitude: "solitude",
+  forest: "forest",
+  water: "water",
+  coastal: "coastal scenery",
+}
+
+function rangeMessage(
+  attribute: UserPreference["attribute"],
+  range: string
+): string {
+  switch (attribute) {
+    case "distance":
+      return `You enjoy hikes around ${range}.`
+
+    case "elevation":
+      return `You enjoy around ${range} of climbing.`
+
+    case "difficulty":
+      return `You usually go for ${range} trails.`
+
+    default:
+      return `You enjoy ${range}.`
+  }
 }
 
 export function generatePreferenceInsights(
@@ -33,6 +59,21 @@ export function generatePreferenceInsights(
         label,
         direction: "neutral",
         message: `Talus is still learning how you feel about ${label}.`,
+      }
+    }
+
+    const range =
+      describePreferredRange(preference)
+
+    if (range) {
+      return {
+        attribute: preference.attribute,
+        label,
+        direction: "range",
+        message: rangeMessage(
+          preference.attribute,
+          range.label
+        ),
       }
     }
 

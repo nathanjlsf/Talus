@@ -11,6 +11,7 @@ export interface Trail {
   distance_miles: number
   estimated_time_minutes: number
   elevation_gain_feet: number
+  elevation_status?: string
   difficulty: string
   difficulty_source: string
   terrain: string

@@ -13,6 +13,10 @@ import {
   generatePreferenceInsights,
 } from "../ranking/preferenceInsights.js"
 
+import {
+  describePreferredRange,
+} from "../ranking/preferredRange.js"
+
 const router = Router()
 
 router.get("/:userId/ranking", (req, res) => {
@@ -45,7 +49,13 @@ router.get("/:userId", (req, res) => {
   const preferences =
     getUserPreferences(userId)
 
-  res.json(preferences)
+  res.json(
+    preferences.map((preference) => ({
+      ...preference,
+      preferredRange:
+        describePreferredRange(preference),
+    }))
+  )
 })
 
 router.get("/:userId/insights", (req, res) => {

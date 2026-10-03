@@ -114,6 +114,8 @@ CREATE TABLE IF NOT EXISTS preferences (
 
     score REAL NOT NULL DEFAULT 0,
     confidence REAL NOT NULL DEFAULT 0,
+    target REAL,
+    tolerance REAL,
 
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

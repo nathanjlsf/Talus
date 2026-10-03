@@ -1,17 +1,18 @@
 import type { UserPreference } from "./preferenceTypes.js"
 
-interface TrailAttributes {
-  distance_miles: number
-  elevation_gain_feet: number
-  difficulty: string
-  terrain: string | null
-  scenic_score: number | null
-  nature_score: number | null
-  solitude_score: number | null
-  forest_score: number | null
-  water_score: number | null
-  coastal_score: number | null
-}
+import type {
+  TrailAttributes,
+} from "./trailAttributes.js"
+
+import {
+  getAttributeMatch,
+} from "./personalizedScoring.js"
+
+import {
+  describePreferredRange,
+  hasPreferredRange,
+  type RangePreference,
+} from "./preferredRange.js"
 
 export interface RecommendationExplanation {
   attribute: UserPreference["attribute"]
@@ -35,112 +36,62 @@ const labels: Record<
   coastal: "coastal scenery",
 }
 
-function normalizeDifficulty(
-  difficulty: string
-): number | null {
-  switch (difficulty.toLowerCase()) {
-    case "easy":
-      return 0
-
-    case "moderate":
-      return 0.5
-
-    case "hard":
-      return 1
-
-    default:
-      return null
-  }
+function formatNumber(value: number) {
+  return value.toLocaleString("en-US", {
+    maximumFractionDigits: 1,
+  })
 }
 
-function normalizeTerrain(
-  terrain: string | null
-): number | null {
-  if (!terrain) {
-    return null
-  }
-
-  switch (terrain.toLowerCase()) {
-    case "paved":
-      return 0
-
-    case "dirt":
-      return 0.5
-
-    case "mixed":
-      return 0.75
-
-    case "rocky":
-      return 1
-
-    default:
-      return null
-  }
-}
-
-function normalizeDistance(
-  distance: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, distance / 10)
-  )
-}
-
-function normalizeElevation(
-  elevation: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, elevation / 2000)
-  )
-}
-
-function getTrailValue(
+function rangeMessage(
   trail: TrailAttributes,
-  attribute: UserPreference["attribute"]
-): number | null {
-  switch (attribute) {
-    case "distance":
-      return normalizeDistance(
+  preference: RangePreference,
+  isMatch: boolean,
+  isAbove: boolean
+): string {
+  const range =
+    describePreferredRange(preference)?.label
+
+  switch (preference.attribute) {
+    case "distance": {
+      const miles = formatNumber(
         trail.distance_miles
       )
 
-    case "elevation":
-      return normalizeElevation(
+      if (isMatch) {
+        return `At ${miles} miles, it's in your sweet spot of ${range}.`
+      }
+
+      return isAbove
+        ? `Longer than you usually enjoy: ${miles} miles versus your usual ${range}.`
+        : `Shorter than you usually enjoy: ${miles} miles versus your usual ${range}.`
+    }
+
+    case "elevation": {
+      const feet = formatNumber(
         trail.elevation_gain_feet
       )
 
-    case "difficulty":
-      return normalizeDifficulty(
-        trail.difficulty
-      )
+      if (isMatch) {
+        return `${feet} ft of climbing is in your sweet spot of ${range}.`
+      }
 
-    case "terrain":
-      return normalizeTerrain(
-        trail.terrain
-      )
+      return isAbove
+        ? `More climbing than you usually enjoy: ${feet} ft versus your usual ${range}.`
+        : `Less climbing than you usually enjoy: ${feet} ft versus your usual ${range}.`
+    }
 
-    case "scenic":
-      return trail.scenic_score
+    case "difficulty": {
+      const difficulty =
+        trail.difficulty.toLowerCase()
 
-    case "nature":
-      return trail.nature_score
+      if (isMatch) {
+        return `Its ${difficulty} rating fits the ${range} trails you usually pick.`
+      }
 
-    case "solitude":
-      return trail.solitude_score
-
-    case "forest":
-      return trail.forest_score
-
-    case "water":
-      return trail.water_score
-
-    case "coastal":
-      return trail.coastal_score
-
-    default:
-      return null
+      return isAbove
+        ? `Harder than the ${range} trails you usually pick.`
+        : `Easier than the ${range} trails you usually pick.`
+    }
   }
 }
 
@@ -155,46 +106,55 @@ export function generateRecommendationExplanations(
   > = []
 
   for (const preference of preferences) {
-    const trailValue = getTrailValue(
+    if (preference.confidence < 0.4) {
+      continue
+    }
+
+    const match = getAttributeMatch(
       trail,
-      preference.attribute
+      preference
     )
 
     if (
-      trailValue === null ||
-      preference.confidence < 0.4
+      match.value === null ||
+      match.signal === null
     ) {
       continue
     }
 
-    const preferenceStrength =
-      (preference.score - 50) / 50
-
-    const trailSignal =
-      (trailValue - 0.5) / 0.5
-
     const contribution =
-      trailSignal *
-      preferenceStrength *
-      preference.confidence
+      match.signal * match.weight
 
     if (Math.abs(contribution) < 0.1) {
       continue
     }
 
-    const label =
-      labels[preference.attribute]
+    const isPositive = contribution > 0
+
+    let message: string
+
+    if (hasPreferredRange(preference)) {
+      message = rangeMessage(
+        trail,
+        preference,
+        isPositive,
+        match.value > preference.target
+      )
+    } else {
+      const label =
+        labels[preference.attribute]
+
+      message = isPositive
+        ? `Strong match: this trail's ${label} fit what Talus has learned you prefer.`
+        : `Potential mismatch: this trail's ${label} differs from what Talus has learned you prefer.`
+    }
 
     candidates.push({
       attribute: preference.attribute,
-      direction:
-        contribution > 0
-          ? "positive"
-          : "negative",
-      message:
-        contribution > 0
-          ? `Strong match: this trail's ${label} fit what Talus has learned you prefer.`
-          : `Potential mismatch: this trail's ${label} differs from what Talus has learned you prefer.`,
+      direction: isPositive
+        ? "positive"
+        : "negative",
+      message,
       contribution: Math.abs(contribution),
     })
   }

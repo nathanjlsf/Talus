@@ -1,143 +1,62 @@
 import type {
-  PreferenceAttribute,
   UserPreference,
 } from "./preferenceTypes.js"
 
-interface TrailAttributes {
-  distance_miles: number
-  elevation_gain_feet: number
-  difficulty: string
-  terrain: string | null
-  scenic_score: number | null
-  nature_score: number | null
-  solitude_score: number | null
-  forest_score: number | null
-  water_score: number | null
-  coastal_score: number | null
+import {
+  getAttributeValue,
+  LEARNED_ATTRIBUTES,
+  type TrailAttributes,
+} from "./trailAttributes.js"
+
+import {
+  getTolerance,
+  hasPreferredRange,
+  rangeFit,
+} from "./preferredRange.js"
+
+export interface AttributeMatch {
+  value: number | null
+  signal: number | null
+  weight: number
 }
 
-const LEARNED_ATTRIBUTES: PreferenceAttribute[] = [
-  "distance",
-  "elevation",
-  "difficulty",
-  "terrain",
-  "scenic",
-  "nature",
-  "solitude",
-  "forest",
-  "water",
-  "coastal",
-]
-
-function normalizeDifficulty(
-  difficulty: string
-): number | null {
-  switch (difficulty.toLowerCase()) {
-    case "easy":
-      return 0
-
-    case "moderate":
-      return 0.5
-
-    case "hard":
-      return 1
-
-    default:
-      return null
-  }
-}
-
-function normalizeTerrain(
-  terrain: string | null
-): number | null {
-  if (!terrain) {
-    return null
-  }
-
-  switch (terrain.toLowerCase()) {
-    case "paved":
-      return 0
-
-    case "dirt":
-      return 0.5
-
-    case "gravel":
-      return 0.6
-
-    case "mixed":
-      return 0.75
-
-    case "rocky":
-      return 1
-
-    default:
-      return null
-  }
-}
-
-function normalizeDistance(
-  distance: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, distance / 10)
-  )
-}
-
-function normalizeElevation(
-  elevation: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, elevation / 2000)
-  )
-}
-
-function getAttributeValue(
+export function getAttributeMatch(
   trail: TrailAttributes,
-  attribute: PreferenceAttribute
-): number | null {
-  switch (attribute) {
-    case "distance":
-      return normalizeDistance(
-        trail.distance_miles
-      )
+  preference: UserPreference
+): AttributeMatch {
+  const value = getAttributeValue(
+    trail,
+    preference.attribute
+  )
 
-    case "elevation":
-      return normalizeElevation(
-        trail.elevation_gain_feet
-      )
+  if (hasPreferredRange(preference)) {
+    return {
+      value,
+      signal:
+        value === null
+          ? null
+          : rangeFit(
+              value,
+              preference.target,
+              getTolerance(preference)
+            ),
+      weight: preference.confidence,
+    }
+  }
 
-    case "difficulty":
-      return normalizeDifficulty(
-        trail.difficulty
-      )
+  const preferenceStrength =
+    (preference.score - 50) / 50
 
-    case "terrain":
-      return normalizeTerrain(
-        trail.terrain
-      )
-
-    case "scenic":
-      return trail.scenic_score
-
-    case "nature":
-      return trail.nature_score
-
-    case "solitude":
-      return trail.solitude_score
-
-    case "forest":
-      return trail.forest_score
-
-    case "water":
-      return trail.water_score
-
-    case "coastal":
-      return trail.coastal_score
-
-    default:
-      return null
+  return {
+    value,
+    signal:
+      value === null
+        ? null
+        : ((value - 0.5) / 0.5) *
+          Math.sign(preferenceStrength),
+    weight:
+      Math.abs(preferenceStrength) *
+      preference.confidence,
   }
 }
 
@@ -149,39 +68,28 @@ export function calculatePersonalizedScore(
   let totalWeight = 0
 
   for (const attribute of LEARNED_ATTRIBUTES) {
-    const trailValue = getAttributeValue(
-      trail,
-      attribute
-    )
-
     const preference = preferences.find(
       (item) => item.attribute === attribute
     )
 
-    if (
-      trailValue === null ||
-      !preference
-    ) {
+    if (!preference) {
       continue
     }
 
-    const preferenceStrength =
-      (preference.score - 50) / 50
+    const match = getAttributeMatch(
+      trail,
+      preference
+    )
 
-    const trailSignal =
-      (trailValue - 0.5) / 0.5
+    // Attributes the trail is missing still count toward the total as
+    // neutral, so a thinly tagged trail can't reach the top on one or
+    // two matches.
+    totalWeight += match.weight
 
-    const weight =
-      Math.abs(preferenceStrength) *
-      preference.confidence
-
-    const contribution =
-      trailSignal *
-      preferenceStrength *
-      preference.confidence
-
-    weightedScore += contribution
-    totalWeight += weight
+    if (match.signal !== null) {
+      weightedScore +=
+        match.signal * match.weight
+    }
   }
 
   if (totalWeight === 0) {

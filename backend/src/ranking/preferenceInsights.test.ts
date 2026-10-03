@@ -53,4 +53,50 @@ describe("generatePreferenceInsights", () => {
       insights[0]!.message
     ).toContain("still learning")
   })
+
+  it("describes distance as a sweet spot instead of more or less", () => {
+    const insights =
+      generatePreferenceInsights([
+        {
+          attribute: "distance",
+          score: 80,
+          confidence: 0.7,
+          target: 0.6,
+          tolerance: 0.1,
+        },
+      ])
+
+    expect(insights[0]!.direction).toBe("range")
+    expect(insights[0]!.message).toBe(
+      "You enjoy hikes around 5 to 7 miles."
+    )
+  })
+
+  it("describes elevation and difficulty sweet spots", () => {
+    const insights =
+      generatePreferenceInsights([
+        {
+          attribute: "elevation",
+          score: 50,
+          confidence: 0.7,
+          target: 0.55,
+          tolerance: 0.15,
+        },
+        {
+          attribute: "difficulty",
+          score: 50,
+          confidence: 0.7,
+          target: 0.5,
+          tolerance: 0.25,
+        },
+      ])
+
+    expect(insights[0]!.message).toBe(
+      "You enjoy around 800 to 1,400 ft of climbing."
+    )
+
+    expect(insights[1]!.message).toBe(
+      "You usually go for moderate trails."
+    )
+  })
 })

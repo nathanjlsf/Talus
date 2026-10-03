@@ -16,6 +16,7 @@ export interface ExperienceWithTrail extends Experience {
     id: number
     distance_miles: number
     elevation_gain_feet: number
+    elevation_status?: string | null
     difficulty: string
     terrain: string | null
     scenic_score: number | null
@@ -98,6 +99,7 @@ export function getExperiencesForUser(
         trails.id AS trail_id,
         trails.distance_miles,
         trails.elevation_gain_feet,
+        trails.elevation_status,
         trails.difficulty,
         trails.terrain,
         trails.scenic_score,
@@ -117,6 +119,7 @@ export function getExperiencesForUser(
         trail_id: number
         distance_miles: number
         elevation_gain_feet: number
+        elevation_status: string | null
         difficulty: string
         terrain: string | null
         scenic_score: number | null
@@ -139,6 +142,7 @@ export function getExperiencesForUser(
       distance_miles: experience.distance_miles,
       elevation_gain_feet:
         experience.elevation_gain_feet,
+      elevation_status: experience.elevation_status,
       difficulty: experience.difficulty,
       terrain: experience.terrain,
       scenic_score: experience.scenic_score,

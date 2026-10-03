@@ -28,9 +28,16 @@ import {
   calculateExperienceSignal,
 } from "../ranking/experienceSignal.js"
 
-import type {
-  ExperienceAttribute,
+import {
+  EXPERIENCE_ATTRIBUTES,
+  type ExperienceAttribute,
 } from "../ranking/experienceSignal.js"
+
+import {
+  applyPreferredRanges,
+  buildLikedTrails,
+  calculatePreferredRanges,
+} from "../ranking/preferredRange.js"
 
 export function listComparisonsForUser(
   userId: number
@@ -110,29 +117,48 @@ export function calculateCombinedPreferences(
   const pairwisePreferences =
     calculateUserPreferences(userId)
 
+  const experiences =
+    listExperiencesForUser(userId)
+
   const experienceResult =
-    calculateUserExperienceSignal(userId)
+    calculateExperienceSignal(experiences)
 
   const comparisons =
     getComparisonsForUser(userId)
 
-  return pairwisePreferences.map(
+  const trailsById = new Map(
+    getAllTrails().map((trail) => [
+      trail.id,
+      trail,
+    ])
+  )
+
+  const preferredRanges =
+    calculatePreferredRanges(
+      buildLikedTrails(
+        comparisons.map((comparison) => ({
+          winnerTrailId:
+            comparison.winner_trail_id,
+          loserTrailId:
+            comparison.loser_trail_id,
+        })),
+        trailsById,
+        experiences.map((experience) => ({
+          trail: experience.trail,
+          rating: experience.overall_rating,
+        }))
+      )
+    )
+
+  const combinedPreferences = pairwisePreferences.map(
     (preference) => {
       const attribute =
         preference.attribute
 
       const isExperienceAttribute =
-        (
-          [
-            "distance",
-            "elevation",
-            "difficulty",
-            "terrain",
-            "scenic",
-            "nature",
-            "solitude",
-          ] as ExperienceAttribute[]
-        ).includes(attribute as ExperienceAttribute)
+        EXPERIENCE_ATTRIBUTES.includes(
+          attribute as ExperienceAttribute
+        )
 
       const experienceEvidence =
         isExperienceAttribute
@@ -216,5 +242,10 @@ export function calculateCombinedPreferences(
         ),
       }
     }
+  )
+
+  return applyPreferredRanges(
+    combinedPreferences,
+    preferredRanges
   )
 }

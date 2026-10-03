@@ -216,7 +216,9 @@ function HikeDNA() {
                       ? "↑"
                       : insight.direction === "low"
                         ? "↓"
-                        : "•"
+                        : insight.direction === "range"
+                          ? "↔"
+                          : "•"
 
                   return (
                     <div
@@ -287,9 +289,24 @@ function PreferenceCard({
     preference.confidence * 100
   )
 
+  const range = preference.preferredRange
+  const sweetSpot =
+    range &&
+    preference.target != null &&
+    preference.tolerance != null
+      ? {
+          start:
+            Math.max(0, preference.target - preference.tolerance) * 100,
+          end:
+            Math.min(1, preference.target + preference.tolerance) * 100,
+        }
+      : null
+
   let preferenceLabel = "No strong preference yet."
 
-  if (score >= 65) {
+  if (range) {
+    preferenceLabel = `Your sweet spot: ${range.label}.`
+  } else if (score >= 65) {
     preferenceLabel = `You tend to prefer more ${label.toLowerCase()}.`
   } else if (score <= 35) {
     preferenceLabel = `You tend to prefer less ${label.toLowerCase()}.`
@@ -314,28 +331,40 @@ function PreferenceCard({
           </div>
         </div>
 
-        <div className="shrink-0 text-right">
-          <span className="text-2xl font-semibold">
-            {score}
-          </span>
+        {!range && (
+          <div className="shrink-0 text-right">
+            <span className="text-2xl font-semibold">
+              {score}
+            </span>
 
-          <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
-            / 100
-          </p>
-        </div>
+            <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+              / 100
+            </p>
+          </div>
+        )}
       </div>
 
       <p className="mt-5 text-sm font-medium text-[#314936]">
         {preferenceLabel}
       </p>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
-        <div
-          className="h-full rounded-full bg-[#314936]"
-          style={{
-            width: `${score}%`,
-          }}
-        />
+      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-[#d8d2c4]">
+        {sweetSpot ? (
+          <div
+            className="absolute inset-y-0 rounded-full bg-[#314936]"
+            style={{
+              left: `${sweetSpot.start}%`,
+              width: `${Math.max(2, sweetSpot.end - sweetSpot.start)}%`,
+            }}
+          />
+        ) : (
+          <div
+            className="h-full rounded-full bg-[#314936]"
+            style={{
+              width: `${score}%`,
+            }}
+          />
+        )}
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs uppercase tracking-[0.15em] text-[#8a9184]">

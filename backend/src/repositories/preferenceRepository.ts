@@ -14,13 +14,17 @@ export function savePreferences(
       attribute,
       score,
       confidence,
+      target,
+      tolerance,
       updated_at
     )
-    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(user_id, attribute)
     DO UPDATE SET
       score = excluded.score,
       confidence = excluded.confidence,
+      target = excluded.target,
+      tolerance = excluded.tolerance,
       updated_at = CURRENT_TIMESTAMP
   `)
 
@@ -31,7 +35,9 @@ export function savePreferences(
           userId,
           preference.attribute,
           preference.score,
-          preference.confidence
+          preference.confidence,
+          preference.target ?? null,
+          preference.tolerance ?? null
         )
       }
     }
@@ -48,7 +54,9 @@ export function getPreferencesForUser(
       SELECT
         attribute,
         score,
-        confidence
+        confidence,
+        target,
+        tolerance
       FROM preferences
       WHERE user_id = ?
       ORDER BY attribute

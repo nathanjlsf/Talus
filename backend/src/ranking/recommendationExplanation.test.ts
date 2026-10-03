@@ -179,4 +179,83 @@ describe("generateRecommendationExplanations", () => {
       )
     ).toBe(true)
   })
+
+  describe("with a learned sweet spot", () => {
+    const trail = {
+      elevation_gain_feet: 1000,
+      difficulty: "Moderate",
+      terrain: "Dirt",
+      scenic_score: 0.5,
+      nature_score: 0.5,
+      solitude_score: 0.5,
+    }
+
+    const distanceSweetSpot = [
+      {
+        attribute: "distance" as const,
+        score: 70,
+        confidence: 0.8,
+        target: 0.6,
+        tolerance: 0.1,
+      },
+    ]
+
+    it("says when a trail is in the sweet spot", () => {
+      const [explanation] =
+        generateRecommendationExplanations(
+          { ...trail, distance_miles: 6 },
+          distanceSweetSpot
+        )
+
+      expect(explanation!.direction).toBe("positive")
+      expect(explanation!.message).toBe(
+        "At 6 miles, it's in your sweet spot of 5 to 7 miles."
+      )
+    })
+
+    it("warns when a trail is longer than usual", () => {
+      const [explanation] =
+        generateRecommendationExplanations(
+          { ...trail, distance_miles: 9.5 },
+          distanceSweetSpot
+        )
+
+      expect(explanation!.direction).toBe("negative")
+      expect(explanation!.message).toContain(
+        "Longer than you usually enjoy"
+      )
+    })
+
+    it("warns when a trail is shorter than usual", () => {
+      const [explanation] =
+        generateRecommendationExplanations(
+          { ...trail, distance_miles: 2 },
+          distanceSweetSpot
+        )
+
+      expect(explanation!.message).toContain(
+        "Shorter than you usually enjoy"
+      )
+    })
+
+    it("warns about harder trails than the hiker usually picks", () => {
+      const [explanation] =
+        generateRecommendationExplanations(
+          { ...trail, distance_miles: 6, difficulty: "Hard" },
+          [
+            {
+              attribute: "difficulty",
+              score: 50,
+              confidence: 0.8,
+              target: 0.1,
+              tolerance: 0.25,
+            },
+          ]
+        )
+
+      expect(explanation!.message).toBe(
+        "Harder than the easy trails you usually pick."
+      )
+    })
+  })
 })

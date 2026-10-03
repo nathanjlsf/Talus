@@ -68,12 +68,22 @@ export interface UserPreference {
 
   score: number
   confidence: number
+  target?: number | null
+  tolerance?: number | null
+  preferredRange?: PreferredRange | null
+}
+
+export interface PreferredRange {
+  min: number
+  max: number
+  unit: "miles" | "feet" | "difficulty"
+  label: string
 }
 
 export interface PreferenceInsight {
   attribute: UserPreference["attribute"]
   label: string
-  direction: "high" | "low" | "neutral"
+  direction: "high" | "low" | "range" | "neutral"
   message: string
 }
 

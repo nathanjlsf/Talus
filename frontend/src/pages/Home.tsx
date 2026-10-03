@@ -220,7 +220,9 @@ function Home() {
                   </span>
 
                   <span className="text-sm font-medium capitalize text-[#687565]">
-                    {insight.direction}
+                    {insight.direction === "range"
+                      ? "Sweet spot"
+                      : insight.direction}
                   </span>
                 </div>
 
