@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import type { SubmitEvent } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { useNavigate } from "react-router"
+import { Eye, EyeOff, Mountain } from "lucide-react"
 import { getCurrentUser, supabase } from "../services/supabase"
 import { createTalusUser } from "../services/api"
 
 function Auth() {
+  const navigate = useNavigate()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -169,7 +172,7 @@ function Auth() {
           supabase_user_id: user.id,
         })
 
-        window.location.href = "/"
+        navigate("/", { replace: true })
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -194,13 +197,21 @@ function Auth() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md items-center px-6 py-12">
+    <div className="mx-auto flex min-h-dvh max-w-md items-center bg-[#f3efe4] px-5 pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] text-[#26352a] md:px-6">
       <div className="w-full">
+        <div className="mb-8 flex items-center gap-2.5">
+          <Mountain size={24} strokeWidth={1.8} />
+
+          <span className="text-xl font-semibold tracking-tight">
+            Talus
+          </span>
+        </div>
+
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
           Welcome to Talus
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[#263a2b]">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#263a2b] md:text-4xl">
           {isResettingPassword
             ? "Choose a new password."
             : mode === "login"

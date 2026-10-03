@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react"
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router"
 import { ArrowLeft, Check, Mountain, Sparkles } from "lucide-react"
 
+import StickyActionBar from "../components/StickyActionBar"
 import {
+  getCurrentTalusUser,
   getTrail,
   getRanking,
   type RankedTrail,
@@ -9,6 +17,10 @@ import {
 } from "../services/api"
 
 function TrailDetail() {
+  const { trailId: trailIdParam } = useParams()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [trail, setTrail] = useState<Trail | null>(null)
   const [recommendation, setRecommendation] =
     useState<RankedTrail | null>(null)
@@ -19,17 +31,20 @@ function TrailDetail() {
   useEffect(() => {
     async function loadTrail() {
       try {
-        const trailId = Number(
-          window.location.pathname.split("/").pop()
-        )
+        setLoading(true)
+        setError(null)
+
+        const trailId = Number(trailIdParam)
 
         if (!trailId) {
           throw new Error("Invalid trail")
         }
 
+        const user = await getCurrentTalusUser()
+
         const [trailData, ranking] = await Promise.all([
           getTrail(trailId),
-          getRanking(1),
+          getRanking(user.id),
         ])
 
         setTrail(trailData)
@@ -51,7 +66,7 @@ function TrailDetail() {
     }
 
     loadTrail()
-  }, [])
+  }, [trailIdParam])
 
   if (loading) {
     return (
@@ -82,20 +97,24 @@ function TrailDetail() {
       <button
         type="button"
         onClick={() => {
-          window.location.href = "/trails"
+          if (location.key === "default") {
+            navigate("/trails")
+          } else {
+            navigate(-1)
+          }
         }}
-        className="flex items-center gap-2 text-sm font-medium text-[#687565] transition hover:text-[#26352a]"
+        className="-ml-1 flex min-h-11 items-center gap-2 px-1 text-sm font-medium text-[#687565] transition hover:text-[#26352a]"
       >
         <ArrowLeft size={16} />
-        Back to Discover
+        Back
       </button>
 
-      <div className="mt-8 max-w-3xl">
+      <div className="mt-4 max-w-3xl md:mt-8">
         <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
           Trail
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           {trail.name}
         </h1>
 
@@ -120,43 +139,43 @@ function TrailDetail() {
         )}
       </div>
 
-      <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+      <div className="mt-6 grid grid-cols-2 gap-3 md:mt-8 md:gap-5 lg:grid-cols-5">
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Distance
           </p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1.5 text-xl font-semibold md:mt-2 md:text-2xl">
             {trail.distance_miles} mi
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Elevation
           </p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1.5 text-xl font-semibold md:mt-2 md:text-2xl">
             {trail.elevation_gain_feet.toLocaleString()} ft
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Difficulty
           </p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1.5 text-xl font-semibold md:mt-2 md:text-2xl">
             {trail.difficulty}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Estimated time
           </p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1.5 text-xl font-semibold md:mt-2 md:text-2xl">
             {trail.estimated_time_minutes < 60
               ? `${trail.estimated_time_minutes} min`
               : `${Math.floor(trail.estimated_time_minutes / 60)} hr${
@@ -167,35 +186,35 @@ function TrailDetail() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5">
+        <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
           <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
             Terrain
           </p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1.5 text-xl font-semibold md:mt-2 md:text-2xl">
             {trail.terrain}
           </p>
         </div>
       </div>
 
       {trail.description && (
-        <div className="mt-10 max-w-3xl">
-          <h2 className="text-2xl font-semibold">
+        <div className="mt-8 max-w-3xl md:mt-10">
+          <h2 className="text-xl font-semibold md:text-2xl">
             About this trail
           </h2>
 
-          <p className="mt-4 text-lg leading-8 text-[#526052]">
+          <p className="mt-3 leading-7 text-[#526052] md:mt-4 md:text-lg md:leading-8">
             {trail.description}
           </p>
         </div>
       )}
 
-      <div className="mt-10 max-w-3xl">
-        <h2 className="text-2xl font-semibold">
+      <div className="mt-8 max-w-3xl md:mt-10">
+        <h2 className="text-xl font-semibold md:text-2xl">
           Trail character
         </h2>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 md:mt-5 md:gap-4">
           {[
             { label: "Scenic", value: trail.scenic_score },
             { label: "Forest", value: trail.forest_score },
@@ -211,7 +230,7 @@ function TrailDetail() {
               return (
                 <div
                   key={attribute.label}
-                  className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-5"
+                  className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5"
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-[#526052]">
@@ -236,7 +255,7 @@ function TrailDetail() {
       </div>
 
       {recommendation && (
-        <div className="mt-10 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7">
+        <div className="mt-8 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:mt-10 md:p-7">
           <div className="flex items-center gap-3">
             <div className="rounded-full bg-[#314936] p-3 text-white">
               <Sparkles size={19} />
@@ -247,7 +266,7 @@ function TrailDetail() {
                 Personal recommendation
               </p>
 
-              <p className="mt-1 text-3xl font-semibold text-[#314936]">
+              <p className="mt-1 text-2xl font-semibold text-[#314936] md:text-3xl">
                 {matchScore}% match
               </p>
             </div>
@@ -276,7 +295,7 @@ function TrailDetail() {
         </div>
       )}
 
-      <div className="mt-10 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#314936] p-7 text-white">
+      <div className="mt-10 hidden max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#314936] p-7 text-white md:block">
         <div className="flex items-start gap-4">
           <div className="rounded-full bg-white/10 p-3">
             <Mountain size={22} />
@@ -296,19 +315,26 @@ function TrailDetail() {
               Your feedback helps improve future recommendations.
             </p>
 
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = `/add-hike?trail=${trail.id}`
-              }}
+            <Link
+              to={`/add-hike?trail=${trail.id}`}
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#f3efe4] px-5 py-3 font-medium text-[#26352a] transition hover:bg-white"
             >
               <Check size={17} />
               Log this hike
-            </button>
+            </Link>
           </div>
         </div>
       </div>
+
+      <StickyActionBar className="mt-8 md:hidden">
+        <Link
+          to={`/add-hike?trail=${trail.id}`}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[#314936] px-6 py-3 font-medium text-white shadow-lg shadow-[#26352a]/15 transition hover:bg-[#263b2b]"
+        >
+          <Check size={17} />
+          Log this hike
+        </Link>
+      </StickyActionBar>
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router"
 import { ArrowRight, Star } from "lucide-react"
 
 import {
@@ -10,6 +11,10 @@ import {
 } from "../services/api"
 
 function OnboardingExperiences() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const trailIds = searchParams.get("trails") || ""
+
   const [trails, setTrails] = useState<Trail[]>([])
   const [ratings, setRatings] = useState<Record<number, number>>({})
   const [loading, setLoading] = useState(true)
@@ -17,9 +22,6 @@ function OnboardingExperiences() {
 
   useEffect(() => {
     async function loadTrails() {
-      const params = new URLSearchParams(window.location.search)
-      const trailIds = params.get("trails") || ""
-
       if (!trailIds) {
         setLoading(false)
         return
@@ -42,7 +44,7 @@ function OnboardingExperiences() {
     }
 
     loadTrails()
-  }, [])
+  }, [trailIds])
 
   function setRating(trailId: number, rating: number) {
     setRatings((current) => ({
@@ -74,8 +76,7 @@ function OnboardingExperiences() {
         })
       }
 
-      window.location.href =
-        "/compare?experience=experienced"
+      navigate("/compare?experience=experienced")
     } finally {
       setSaving(false)
     }
@@ -86,13 +87,13 @@ function OnboardingExperiences() {
     trails.every((trail) => ratings[trail.id] !== undefined)
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl">
       <div className="max-w-2xl">
         <p className="text-sm font-medium uppercase tracking-[0.15em] text-[#687565]">
           Your hiking history
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold text-[#263a2b]">
+        <h1 className="mt-3 text-3xl font-semibold text-[#263a2b] md:text-4xl">
           How were these hikes?
         </h1>
 
@@ -119,7 +120,7 @@ function OnboardingExperiences() {
             return (
               <div
                 key={trail.id}
-                className="rounded-2xl border border-[#d8d2c4] bg-[#f8f5ed] p-6"
+                className="rounded-2xl border border-[#d8d2c4] bg-[#f8f5ed] p-5 md:p-6"
               >
                 <h2 className="text-xl font-semibold text-[#263a2b]">
                   {trail.name}
@@ -172,11 +173,11 @@ function OnboardingExperiences() {
         )}
       </div>
 
-      <div className="mt-10 flex justify-end border-t border-[#d8d2c4] pt-6">
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 mt-10 flex justify-end border-t border-[#d8d2c4] bg-[#f4f0e6] px-4 py-3 md:static md:mx-0 md:bg-transparent md:px-0 md:pt-6 md:pb-0">
         <button
           onClick={continueToNextStep}
           disabled={saving || trails.length > 0 && !allRated}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#314936] px-5 py-3 font-medium text-white transition hover:bg-[#263a2b] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl md:w-auto bg-[#314936] px-5 py-3 font-medium text-white transition hover:bg-[#263a2b] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {saving ? "Saving..." : "Continue"}
           <ArrowRight size={17} />

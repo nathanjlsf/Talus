@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router"
 import { Mountain, TrendingUp } from "lucide-react"
 
 import {
@@ -34,11 +35,11 @@ function Compare() {
   const [error, setError] =
     useState<string | null>(null)
 
-  const params =
-    new URLSearchParams(window.location.search)
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const experienceType =
-    params.get("experience")
+    searchParams.get("experience")
 
   const isNewHiker =
     experienceType === "new"
@@ -190,13 +191,13 @@ function Compare() {
               : "Preference engine"}
           </p>
 
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
             {isNewHiker
               ? "Your first hiking style is taking shape."
               : "Your hiking style is taking shape."}
           </h1>
 
-          <p className="mt-4 text-lg leading-8 text-[#687565]">
+          <p className="mt-4 leading-7 text-[#687565] md:text-lg md:leading-8">
             {isNewHiker
               ? "Talus has a better idea of what sounds appealing to you. Let's use that to find a great first hike."
               : "Talus has learned a little more about what you like. Keep exploring to make your recommendations even better."}
@@ -206,9 +207,9 @@ function Compare() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/trails"
+                navigate("/trails")
               }}
-              className="rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b]"
+              className="min-h-12 w-full rounded-full bg-[#314936] px-6 py-3 sm:w-auto font-medium text-white transition hover:bg-[#263b2b]"
             >
               Discover my trails
             </button>
@@ -216,9 +217,9 @@ function Compare() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/hike-dna"
+                navigate("/hike-dna")
               }}
-              className="rounded-full border border-[#b9b6aa] bg-[#f3efe4] px-6 py-3 font-medium text-[#314936] transition hover:border-[#314936]"
+              className="min-h-12 w-full rounded-full border sm:w-auto border-[#b9b6aa] bg-[#f3efe4] px-6 py-3 font-medium text-[#314936] transition hover:border-[#314936]"
             >
               See my Hike DNA
             </button>
@@ -239,13 +240,13 @@ function Compare() {
               : "Preference engine"}
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           {isNewHiker
             ? "What sounds like a good first hike?"
             : "Which hike would you rather take?"}
         </h1>
 
-        <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-[#687565]">
+        <p className="mx-auto mt-4 max-w-xl leading-7 text-[#687565] md:text-lg md:leading-8">
           {isNewHiker
             ? "Choose the trail that sounds more appealing. There are no wrong answers — Talus will use your choices to find a good fit."
             : "Choose the trail you prefer. There are no wrong answers — Talus will use your choices to learn what makes a great hike for you."}
@@ -278,7 +279,7 @@ function Compare() {
         </div>
       )}
 
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
+      <div className="mt-8 grid gap-4 md:mt-12 md:grid-cols-2 md:gap-6">
         <TrailChoice
           trail={leftTrail}
           disabled={submitting}
@@ -327,7 +328,7 @@ function TrailChoice({
       type="button"
       disabled={disabled}
       onClick={onChoose}
-      className="group w-full rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8 text-left transition hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6] disabled:cursor-not-allowed disabled:opacity-60"
+      className="group w-full rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 text-left transition active:scale-[0.99] md:p-8 md:hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -335,7 +336,7 @@ function TrailChoice({
             Trail
           </p>
 
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+          <h2 className="mt-2 text-xl font-semibold tracking-tight md:text-2xl">
             {trail.trail.name}
           </h2>
 
@@ -352,12 +353,12 @@ function TrailChoice({
       </div>
 
       {trail.trail.description && (
-        <p className="mt-6 leading-7 text-[#526052]">
+        <p className="mt-4 line-clamp-3 leading-7 text-[#526052] md:mt-6 md:line-clamp-none">
           {trail.trail.description}
         </p>
       )}
 
-      <div className="mt-7 flex flex-wrap gap-4 text-sm text-[#687565]">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-[#687565] md:mt-7">
         <span>
           {trail.trail.distance_miles} mi
         </span>
@@ -386,7 +387,7 @@ function TrailChoice({
         </span>
       </div>
 
-      <div className="mt-8 flex items-center gap-2 font-medium text-[#314936]">
+      <div className="mt-5 flex items-center gap-2 font-medium text-[#314936] md:mt-8">
         <TrendingUp size={17} />
 
         Choose this trail

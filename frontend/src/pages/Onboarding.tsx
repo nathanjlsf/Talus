@@ -1,28 +1,31 @@
+import { useNavigate } from "react-router"
 import { Mountain } from "lucide-react"
 
 function Onboarding() {
+  const navigate = useNavigate()
+
   return (
-    <section className="mx-auto flex min-h-[75vh] max-w-3xl items-center justify-center">
+    <section className="mx-auto flex max-w-3xl items-center justify-center md:min-h-[75vh]">
       <div className="w-full text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#314936] text-white">
           <Mountain size={30} />
         </div>
 
-        <p className="mt-8 text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
+        <p className="mt-6 text-sm font-medium uppercase tracking-[0.2em] text-[#687565] md:mt-8">
           Welcome to Talus
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">
           Find hikes that feel like you.
         </h1>
 
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-[#687565]">
+        <p className="mx-auto mt-4 max-w-xl leading-7 text-[#687565] md:mt-5 md:text-lg md:leading-8">
           Talus learns what you like and uses it to help
           you find trails you'll love.
         </p>
 
-        <div className="mx-auto mt-12 max-w-2xl">
-          <h2 className="text-2xl font-semibold">
+        <div className="mx-auto mt-10 max-w-2xl md:mt-12">
+          <h2 className="text-xl font-semibold md:text-2xl">
             Have you hiked before?
           </h2>
 
@@ -34,9 +37,9 @@ function Onboarding() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/onboarding/hikes"
+                navigate("/onboarding/hikes")
               }}
-              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7 text-left transition hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6]"
+              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 text-left transition active:scale-[0.99] md:p-7 md:hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6]"
             >
               <h3 className="text-xl font-semibold">
                 I've hiked before
@@ -55,9 +58,9 @@ function Onboarding() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/compare?experience=new"
+                navigate("/compare?experience=new")
               }}
-              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7 text-left transition hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6]"
+              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 text-left transition active:scale-[0.99] md:p-7 md:hover:-translate-y-1 hover:border-[#9da695] hover:bg-[#e8e3d6]"
             >
               <h3 className="text-xl font-semibold">
                 I'm new to hiking

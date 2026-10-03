@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useSearchParams } from "react-router"
 import { Check, Mountain } from "lucide-react"
 
 import {
@@ -9,6 +10,10 @@ import {
 } from "../services/api"
 
 function AddHike() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const trailParam = searchParams.get("trail")
+
   const [trails, setTrails] = useState<Trail[]>([])
   const [trailId, setTrailId] = useState("")
   const [trailSearch, setTrailSearch] = useState("")
@@ -24,12 +29,6 @@ function AddHike() {
       try {
         const data = await getTrails()
         setTrails(data)
-
-        const params = new URLSearchParams(
-          window.location.search
-        )
-
-        const trailParam = params.get("trail")
 
         if (trailParam) {
           const trailIdFromUrl = Number(trailParam)
@@ -54,7 +53,7 @@ function AddHike() {
     }
 
     loadTrails()
-  }, [])
+  }, [trailParam])
 
   const selectedTrail = trails.find(
     (trail) => trail.id === Number(trailId)
@@ -117,13 +116,13 @@ function AddHike() {
           Hiking History
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           {selectedTrail
             ? `Log ${selectedTrail.name}`
             : "Add a hike"}
         </h1>
 
-        <p className="mt-4 max-w-xl text-lg leading-8 text-[#687565]">
+        <p className="mt-4 max-w-xl leading-7 text-[#687565] md:text-lg md:leading-8">
           Record a trail you've explored. You can tell Talus
           how the hike went afterward.
         </p>
@@ -131,7 +130,7 @@ function AddHike() {
 
       <form
         onSubmit={handleSubmit}
-        className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8 md:p-10"
+        className="mt-8 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:mt-10 md:p-10"
       >
         {!selectedTrail && (
           <div>
@@ -250,11 +249,12 @@ function AddHike() {
                 type="button"
                 onClick={() => {
                   if (savedActivityId) {
-                    window.location.href =
+                    navigate(
                       `/activities/${savedActivityId}/experience`
+                    )
                   }
                 }}
-                className="rounded-full bg-[#314936] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#263b2b]"
+                className="min-h-11 rounded-full bg-[#314936] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#263b2b]"
               >
                 Review my hike
               </button>
@@ -262,9 +262,9 @@ function AddHike() {
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href = "/hike-dna"
+                  navigate("/hike-dna")
                 }}
-                className="rounded-full border border-[#b9b6aa] bg-[#f3efe4] px-5 py-2.5 text-sm font-medium text-[#314936] transition hover:border-[#314936]"
+                className="min-h-11 rounded-full border border-[#b9b6aa] bg-[#f3efe4] px-5 py-2.5 text-sm font-medium text-[#314936] transition hover:border-[#314936]"
               >
                 See my Hike DNA
               </button>
@@ -276,7 +276,7 @@ function AddHike() {
           <button
             type="submit"
             disabled={saving}
-            className="mt-8 w-full rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-6 min-h-12 w-full rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b] disabled:cursor-not-allowed disabled:opacity-60 md:mt-8"
           >
             {saving ? "Saving hike..." : "Save hike"}
           </button>

@@ -1,3 +1,5 @@
+import { Navigate, Route, Routes } from "react-router"
+
 import Layout from "./components/Layout"
 import Explore from "./pages/Explore"
 import Compare from "./pages/Compare"
@@ -11,87 +13,55 @@ import Experience from "./pages/Experience"
 import PastHikes from "./pages/PastHikes"
 import OnboardingExperiences from "./pages/OnboardingExperiences"
 import Auth from "./pages/Auth"
+import MapPage from "./pages/MapPage"
+import Record from "./pages/Record"
+import Profile from "./pages/Profile"
 import ProtectedRoute from "./components/ProtectedRoute"
 import PublicRoute from "./components/PublicRoute"
 
 function App() {
-  const path = window.location.pathname
+  return (
+    <Routes>
+      <Route
+        path="/auth"
+        element={
+          <PublicRoute>
+            <Auth />
+          </PublicRoute>
+        }
+      />
 
-  let page
-
-  if (path === "/auth") {
-    page = (
-      <PublicRoute>
-        <Auth />
-      </PublicRoute>)
-  } else if (path === "/") {
-    page = (
-      <ProtectedRoute>
-        <Home />
-      </ProtectedRoute>)
-  } else if (path.startsWith("/trails/")) {
-    page = (
-      <ProtectedRoute>
-        <TrailDetail />
-      </ProtectedRoute>
-    )
-  } else if (path === "/onboarding") {
-    page = (
-      <ProtectedRoute>
-        <Onboarding />
-      </ProtectedRoute>
-    )
-  } else if (path === "/compare") {
-    page = (
-      <ProtectedRoute>
-        <Compare />
-      </ProtectedRoute>
-    )
-  } else if (path === "/add-hike") {
-    page = (
-      <ProtectedRoute>
-        <AddHike />
-      </ProtectedRoute>
-    )
-  } else if (path === "/hike-dna") {
-    page = (
-      <ProtectedRoute>
-        <HikeDNA />
-      </ProtectedRoute>
-    )
-  } else if (path === "/activities") {
-    page = (
-      <ProtectedRoute>
-        <Activities />
-      </ProtectedRoute>
-    )
-  } else if (path.startsWith("/activities/") && path.endsWith("/experience")) {
-    page = (
-      <ProtectedRoute>
-        <Experience />
-      </ProtectedRoute>
-    )
-  } else if (path === "/onboarding/hikes") {
-    page = (
-      <ProtectedRoute>
-        <PastHikes />
-      </ProtectedRoute>
-    )
-  } else if (path === "/onboarding/experiences") {
-    page = (
-      <ProtectedRoute>
-        <OnboardingExperiences />
-      </ProtectedRoute>
-    )
-  } else {
-    page = (
-      <ProtectedRoute>
-        <Explore />
-      </ProtectedRoute>
-    )
-  }
-
-  return <Layout>{page}</Layout>
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Home />} />
+        <Route path="trails" element={<Explore />} />
+        <Route path="trails/:trailId" element={<TrailDetail />} />
+        <Route path="map" element={<MapPage />} />
+        <Route path="record" element={<Record />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="compare" element={<Compare />} />
+        <Route path="add-hike" element={<AddHike />} />
+        <Route path="hike-dna" element={<HikeDNA />} />
+        <Route path="activities" element={<Activities />} />
+        <Route
+          path="activities/:activityId/experience"
+          element={<Experience />}
+        />
+        <Route path="onboarding" element={<Onboarding />} />
+        <Route path="onboarding/hikes" element={<PastHikes />} />
+        <Route
+          path="onboarding/experiences"
+          element={<OnboardingExperiences />}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  )
 }
 
 export default App

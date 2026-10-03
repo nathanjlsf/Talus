@@ -1,3 +1,4 @@
+import { Link } from "react-router"
 import { Mountain, Sparkles } from "lucide-react"
 
 import type { RankedTrail } from "../services/api"
@@ -17,20 +18,18 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
   const matchScore = Math.round(score)
 
   return (
-    <article
-      onClick={() => {
-        window.location.href = `/trails/${trail.id}`
-      }}
-      className="flex cursor-pointer gap-6 border-b border-[#d8d2c4] py-7 transition hover:bg-[#ebe6da]"
+    <Link
+      to={`/trails/${trail.id}`}
+      className="flex gap-4 border-b border-[#d8d2c4] py-5 transition hover:bg-[#ebe6da] md:gap-6 md:py-7"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#314936] text-lg font-semibold text-white">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#314936] text-base font-semibold text-white md:h-12 md:w-12 md:text-lg">
         {rank}
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
+        <div className="flex items-start justify-between gap-3 md:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight md:text-2xl">
               {trail.name}
             </h2>
 
@@ -42,24 +41,24 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
           </div>
 
           <div className="shrink-0 text-right">
-            <p className="text-2xl font-semibold text-[#314936]">
+            <p className="text-xl font-semibold text-[#314936] md:text-2xl">
               {matchScore}%
             </p>
 
-            <p className="text-xs uppercase tracking-[0.15em] text-[#8a9184]">
-              personal match
+            <p className="text-[10px] uppercase tracking-[0.15em] text-[#8a9184] md:text-xs">
+              match
             </p>
           </div>
         </div>
 
         {trail.description && (
-          <p className="mt-4 max-w-2xl leading-7 text-[#526052]">
+          <p className="mt-3 line-clamp-3 max-w-2xl leading-7 text-[#526052] md:mt-4 md:line-clamp-none">
             {trail.description}
           </p>
         )}
 
         {explanations.length > 0 && (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl bg-[#ebe6da] px-4 py-3">
+          <div className="mt-4 flex items-start gap-3 rounded-2xl bg-[#ebe6da] px-4 py-3 md:mt-5">
             <Sparkles
               size={17}
               className="mt-0.5 shrink-0 text-[#314936]"
@@ -84,7 +83,7 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap gap-5 text-sm text-[#687565]">
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#687565] md:mt-5">
           <span className="flex items-center gap-2">
             <Mountain size={16} />
             {trail.distance_miles} mi
@@ -99,11 +98,11 @@ function TrailCard({ rankedTrail }: TrailCardProps) {
           </span>
         </div>
 
-        <p className="mt-5 text-sm font-medium text-[#314936]">
+        <p className="mt-4 hidden text-sm font-medium text-[#314936] md:mt-5 md:block">
           View trail →
         </p>
       </div>
-    </article>
+    </Link>
   )
 }
 

@@ -1,3 +1,5 @@
+import { Link } from "react-router"
+
 import type { Trail } from "../services/api"
 
 interface TrailResultCardProps {
@@ -6,18 +8,16 @@ interface TrailResultCardProps {
 
 function TrailResultCard({ trail }: TrailResultCardProps) {
   return (
-    <article
-      onClick={() => {
-        window.location.href = `/trails/${trail.id}`
-      }}
-      className="flex cursor-pointer gap-6 border-b border-[#d8d2c4] py-7 transition hover:bg-[#ebe6da]"
+    <Link
+      to={`/trails/${trail.id}`}
+      className="flex gap-4 border-b border-[#d8d2c4] py-5 transition hover:bg-[#ebe6da] md:gap-6 md:py-7"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#314936] text-white">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#314936] text-white md:h-12 md:w-12">
         <span className="text-lg">↗</span>
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="text-2xl font-semibold tracking-tight">
+        <h3 className="text-lg font-semibold tracking-tight md:text-2xl">
           {trail.name}
         </h3>
 
@@ -28,7 +28,7 @@ function TrailResultCard({ trail }: TrailResultCardProps) {
         )}
 
         {trail.description && (
-          <p className="mt-3 max-w-2xl leading-7 text-[#526052]">
+          <p className="mt-3 line-clamp-3 max-w-2xl leading-7 text-[#526052] md:line-clamp-none">
             {trail.description}
           </p>
         )}
@@ -59,7 +59,7 @@ function TrailResultCard({ trail }: TrailResultCardProps) {
           )}
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
 
 import {
   getActivities,
@@ -44,6 +45,8 @@ function RatingSummary({
 }
 
 function Activities() {
+  const navigate = useNavigate()
+
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,11 +77,11 @@ function Activities() {
         Your history
       </p>
 
-      <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Your hikes
       </h1>
 
-      <p className="mt-4 max-w-xl text-lg leading-8 text-[#687565]">
+      <p className="mt-4 max-w-xl leading-7 text-[#687565] md:text-lg md:leading-8">
         A record of the trails you've explored and the miles you've
         put behind you.
       </p>
@@ -118,11 +121,11 @@ function Activities() {
           {activities.map((activity) => (
             <article
               key={activity.id}
-              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-6"
+              className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:p-6"
             >
-              <div className="flex items-start justify-between gap-6">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-tight">
+              <div className="flex items-start justify-between gap-4 md:gap-6">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
                     {activity.trail.name}
                   </h2>
 
@@ -140,7 +143,7 @@ function Activities() {
                 </div>
 
                 {activity.distance_miles !== null && (
-                  <p className="text-2xl font-semibold text-[#314936]">
+                  <p className="shrink-0 text-xl font-semibold text-[#314936] md:text-2xl">
                     {activity.distance_miles} mi
                   </p>
                 )}
@@ -168,10 +171,9 @@ function Activities() {
                   <button
                     type="button"
                     onClick={() => {
-                      window.location.href =
-                        `/activities/${activity.id}/experience`
+                      navigate(`/activities/${activity.id}/experience`)
                     }}
-                    className="rounded-full bg-[#314936] px-5 py-2.5 font-medium text-white transition hover:bg-[#263b2b]"
+                    className="min-h-11 w-full rounded-full bg-[#314936] px-5 py-2.5 font-medium sm:w-auto text-white transition hover:bg-[#263b2b]"
                   >
                     Tell Talus how it went
                   </button>

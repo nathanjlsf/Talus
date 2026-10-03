@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router"
+
+import StickyActionBar from "../components/StickyActionBar"
 import {
   createExperience,
   getActivity,
@@ -6,9 +9,9 @@ import {
 } from "../services/api"
 
 function Experience() {
-  const activityId = Number(
-    window.location.pathname.split("/")[2]
-  )
+  const navigate = useNavigate()
+  const params = useParams()
+  const activityId = Number(params.activityId)
 
   const [activity, setActivity] =
     useState<Activity | null>(null)
@@ -73,7 +76,7 @@ function Experience() {
         notes: notes.trim() || undefined,
       })
 
-      window.location.href = "/hike-dna"
+      navigate("/hike-dna")
     } catch (error) {
       setError(
         error instanceof Error
@@ -116,11 +119,11 @@ function Experience() {
               After the hike
             </p>
 
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
               How did it go?
             </h1>
 
-            <h2 className="mt-3 text-2xl font-medium">
+            <h2 className="mt-3 text-xl font-medium md:text-2xl">
               {activity.trail.name}
             </h2>
 
@@ -130,7 +133,7 @@ function Experience() {
               </p>
             )}
 
-            <p className="mt-4 text-lg leading-8 text-[#687565]">
+            <p className="mt-4 leading-7 text-[#687565] md:text-lg md:leading-8">
               Tell Talus what you thought. Your experience will help
               shape future recommendations.
             </p>
@@ -143,7 +146,7 @@ function Experience() {
 
             <form
               onSubmit={handleSubmit}
-              className="mt-10 space-y-8"
+              className="mt-8 space-y-7 md:mt-10 md:space-y-8"
             >
               <RatingField
                 label="Overall"
@@ -190,15 +193,17 @@ function Experience() {
               />
             </div>
 
-            <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-full bg-[#314936] px-6 py-3 font-medium text-white transition hover:bg-[#263b2b] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-                {submitting
-                ? "Saving your experience..."
-                : "Save my experience"}
-            </button>
+            <StickyActionBar>
+              <button
+                  type="submit"
+                  disabled={submitting}
+                  className="min-h-12 w-full rounded-full bg-[#314936] px-6 py-3 font-medium text-white shadow-lg shadow-[#26352a]/15 transition hover:bg-[#263b2b] disabled:cursor-not-allowed disabled:opacity-60 md:shadow-none"
+              >
+                  {submitting
+                  ? "Saving your experience..."
+                  : "Save my experience"}
+              </button>
+            </StickyActionBar>
           </form>
         </div>
       </section>
@@ -233,14 +238,14 @@ function RatingField({
         </span>
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2 -ml-1.5 flex gap-1">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             key={rating}
             type="button"
             onClick={() => onChange(rating)}
             aria-label={`${rating} out of 5`}
-            className={`text-3xl transition ${
+            className={`flex h-12 w-12 items-center justify-center text-3xl transition ${
               rating <= value
                 ? "text-[#314936]"
                 : "text-[#c9c4b8]"

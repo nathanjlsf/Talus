@@ -1,25 +1,31 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
 import { ArrowRight, Check, Search } from "lucide-react"
 
 import { getTrails, type Trail } from "../services/api"
 
+const MAX_VISIBLE_TRAILS = 50
+
 function PastHikes() {
+  const navigate = useNavigate()
   const [trails, setTrails] = useState<Trail[]>([])
   const [selectedTrails, setSelectedTrails] = useState<Trail[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadTrails() {
+    const timeout = window.setTimeout(async () => {
       try {
         const results = await getTrails({ search })
         setTrails(results)
       } finally {
         setLoading(false)
       }
-    }
+    }, 250)
 
-    loadTrails()
+    return () => {
+      window.clearTimeout(timeout)
+    }
   }, [search])
 
   function toggleTrail(trail: Trail) {
@@ -37,17 +43,17 @@ function PastHikes() {
   function continueToNextStep() {
     const trailIds = selectedTrails.map((trail) => trail.id).join(",")
 
-    window.location.href = `/onboarding/experiences?trails=${trailIds}`
+    navigate(`/onboarding/experiences?trails=${trailIds}`)
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-12">
+    <div className="mx-auto max-w-4xl">
       <div className="max-w-2xl">
         <p className="text-sm font-medium uppercase tracking-[0.15em] text-[#687565]">
           Your hiking history
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold text-[#263a2b]">
+        <h1 className="mt-3 text-3xl font-semibold text-[#263a2b] md:text-4xl">
           Which hikes have you done?
         </h1>
 
@@ -64,7 +70,7 @@ function PastHikes() {
         />
 
         <input
-          type="text"
+          type="search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search for a hike..."
@@ -99,7 +105,7 @@ function PastHikes() {
             No hikes found. Try a different search.
           </p>
         ) : (
-          trails.map((trail) => {
+          trails.slice(0, MAX_VISIBLE_TRAILS).map((trail) => {
             const selected = selectedTrails.some(
               (item) => item.id === trail.id,
             )
@@ -108,7 +114,7 @@ function PastHikes() {
               <button
                 key={trail.id}
                 onClick={() => toggleTrail(trail)}
-                className={`flex w-full items-center justify-between rounded-2xl border p-5 text-left transition ${
+                className={`flex w-full items-center justify-between gap-3 rounded-2xl border p-4 text-left transition md:p-5 ${
                   selected
                     ? "border-[#314936] bg-[#ebe6da]"
                     : "border-[#d8d2c4] bg-[#f8f5ed] hover:border-[#687565]"
@@ -139,12 +145,19 @@ function PastHikes() {
             )
           })
         )}
+
+        {!loading && trails.length > MAX_VISIBLE_TRAILS && (
+          <p className="pt-2 text-center text-sm text-[#687565]">
+            Showing {MAX_VISIBLE_TRAILS} of {trails.length.toLocaleString()} trails.
+            Search to find a specific hike.
+          </p>
+        )}
       </div>
 
-      <div className="sticky bottom-0 z-10 mt-10 flex items-center justify-between border-t border-[#d8d2c4] bg-[#f4f0e6] py-4 shadow-[0_-4px_12px_rbga(38,58,43,0.04)]">
+      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 -mx-4 mt-10 flex items-center justify-between border-t border-[#d8d2c4] bg-[#f4f0e6] px-4 py-3 shadow-[0_-4px_12px_rgba(38,58,43,0.04)] md:bottom-0 md:mx-0 md:px-0 md:py-4">
         <button
           onClick={continueToNextStep}
-          className="text-sm font-medium text-[#687565] hover:text-[#314936]"
+          className="min-h-11 text-sm font-medium text-[#687565] hover:text-[#314936]"
         >
           I don't remember any
         </button>

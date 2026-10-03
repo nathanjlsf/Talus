@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Navigate } from "react-router"
 import { getCurrentUser } from "../services/supabase"
 
 type PublicRouteProps = {
@@ -33,8 +34,7 @@ function PublicRoute({ children }: PublicRouteProps) {
   }
 
   if (authenticated) {
-    window.location.href = "/"
-    return null
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>

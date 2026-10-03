@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
 import {
   Compass,
   Mountain,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react"
 
 import {
+  getCurrentTalusUser,
   getPreferences,
   getPreferenceInsights,
   type UserPreference,
@@ -55,6 +57,8 @@ const attributeInfo = {
 } as const
 
 function HikeDNA() {
+  const navigate = useNavigate()
+
   const [preferences, setPreferences] = useState<
     UserPreference[]
   >([])
@@ -68,10 +72,12 @@ function HikeDNA() {
   useEffect(() => {
     async function loadPreferences() {
       try {
+        const user = await getCurrentTalusUser()
+
         const [preferencesData, insightsData] =
           await Promise.all([
-            getPreferences(1),
-            getPreferenceInsights(1),
+            getPreferences(user.id),
+            getPreferenceInsights(user.id),
           ])
 
         setPreferences(preferencesData)
@@ -117,11 +123,11 @@ function HikeDNA() {
           Your preferences
         </p>
 
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           Hike DNA
         </h1>
 
-        <p className="mt-4 text-lg leading-8 text-[#687565]">
+        <p className="mt-4 leading-7 text-[#687565] md:text-lg md:leading-8">
           Talus learns what makes a great hike for you
           from the trails you choose and the experiences
           you share.
@@ -129,7 +135,7 @@ function HikeDNA() {
       </div>
 
       {preferences.length === 0 ? (
-        <div className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-8">
+        <div className="mt-8 rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:mt-10 md:p-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#314936] text-white">
             <Mountain size={24} />
           </div>
@@ -147,7 +153,7 @@ function HikeDNA() {
           <button
             type="button"
             onClick={() => {
-              window.location.href = "/compare"
+              navigate("/compare")
             }}
             className="mt-6 rounded-full bg-[#314936] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#263b2b]"
           >
@@ -167,7 +173,7 @@ function HikeDNA() {
               </h2>
             </div>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-2 md:gap-5">
               {preferences.map((preference) => {
                 const info =
                   attributeInfo[
@@ -231,7 +237,7 @@ function HikeDNA() {
             </div>
           )}
 
-          <div className="mt-12 rounded-3xl border border-[#d8d2c4] bg-[#314936] p-7 text-white">
+          <div className="mt-10 rounded-3xl border border-[#d8d2c4] bg-[#314936] p-5 text-white md:mt-12 md:p-7">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#d8dfd5]">
               Keep exploring
             </p>
@@ -250,7 +256,7 @@ function HikeDNA() {
             <button
               type="button"
               onClick={() => {
-                window.location.href = "/trails"
+                navigate("/trails")
               }}
               className="mt-5 rounded-xl bg-[#f3efe4] px-5 py-3 font-medium text-[#26352a] transition hover:bg-white"
             >
@@ -290,7 +296,7 @@ function PreferenceCard({
   }
 
   return (
-    <article className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-7">
+    <article className="rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:p-7">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="rounded-full bg-[#314936] p-3 text-white">
@@ -332,7 +338,7 @@ function PreferenceCard({
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.15em] text-[#8a9184]">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs uppercase tracking-[0.15em] text-[#8a9184]">
         <span>
           {confidence}% learned
         </span>
