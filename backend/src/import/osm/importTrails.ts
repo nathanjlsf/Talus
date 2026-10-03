@@ -37,8 +37,8 @@ import {
 } from "../geo/countyLookup.js"
 
 import {
-  getTrailCenter,
-} from "../../repositories/trailGeometryRepository.js"
+  filterOverlappingGroups,
+} from "./filterOverlappingGroups.js"
 
 import db from "../../db/database.js"
 
@@ -264,19 +264,23 @@ export async function importBayAreaTrails() {
     `Grouped into ${groups.length} candidate trails`
   )
 
+  const filteredGroups = filterTrailGroups(groups)
+
   const candidates =
-    filterTrailGroups(groups)
+    filterOverlappingGroups(filteredGroups)
+
+  console.log(
+    `After overlap filtering: ${candidates.length} trails`
+  )
+
+  console.log(
+    `Overlap filter removed ${
+      filteredGroups.length - candidates.length
+    } groups`
+  )
 
   console.log(
     `Importing ${candidates.length} trails`
-  )
-
-  const currentSourceIds = new Set(
-    candidates.flatMap((group) =>
-      group.ways.map((way) =>
-        String(way.id)
-      )
-    )
   )
 
   const existingOsmTrails =
@@ -287,17 +291,41 @@ export async function importBayAreaTrails() {
         trail.source_id !== undefined
     )
 
+  const currentGroups = candidates.map(
+    (group) =>
+      new Set(
+        group.ways.map((way) =>
+          String(way.id)
+        )
+      )
+  )
+
   const staleTrails =
     existingOsmTrails.filter((trail) => {
       const sourceIds =
-        trail.source_id!.split(",")
-
-      return sourceIds.every(
-        (sourceId) =>
-          !currentSourceIds.has(
-            sourceId
+        trail.source_id!
+          .split(",")
+          .map((sourceId) =>
+            sourceId.trim()
           )
-      )
+
+      const sourceIdSet =
+        new Set(sourceIds)
+
+      const isExactCurrentGroup =
+        currentGroups.some(
+          (groupSourceIds) =>
+            groupSourceIds.size ===
+              sourceIdSet.size &&
+            [...sourceIdSet].every(
+              (sourceId) =>
+                groupSourceIds.has(
+                  sourceId
+                )
+            )
+        )
+
+      return !isExactCurrentGroup
     })
 
   console.log(

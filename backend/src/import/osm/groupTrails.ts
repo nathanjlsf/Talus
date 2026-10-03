@@ -47,6 +47,40 @@ function distanceMeters(
   return earthRadius * c
 }
 
+function distanceBetweenPoints(
+  first: { lat: number; lon: number },
+  second: { lat: number; lon: number }
+): number {
+  const earthRadius = 6371000
+
+  const lat1Radians =
+    (first.lat * Math.PI) / 180
+
+  const lat2Radians =
+    (second.lat * Math.PI) / 180
+
+  const deltaLat =
+    ((second.lat - first.lat) * Math.PI) / 180
+
+  const deltaLon =
+    ((second.lon - first.lon) * Math.PI) / 180
+
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1Radians) *
+      Math.cos(lat2Radians) *
+      Math.sin(deltaLon / 2) ** 2
+
+  const c =
+    2 *
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1 - a)
+    )
+
+  return earthRadius * c
+}
+
 function waysAreConnected(
   first: OsmWay,
   second: OsmWay
@@ -82,37 +116,78 @@ function waysAreConnected(
       secondGeometry.length - 1
     ]!
 
-  const distances = [
-    distanceMeters(
-      firstStart.lat,
-      firstStart.lon,
-      secondStart.lat,
-      secondStart.lon
+  const endpointThresholdMeters = 30
+
+  const endpointDistances = [
+    distanceBetweenPoints(
+      firstStart,
+      secondStart
     ),
-    distanceMeters(
-      firstStart.lat,
-      firstStart.lon,
-      secondEnd.lat,
-      secondEnd.lon
+    distanceBetweenPoints(
+      firstStart,
+      secondEnd
     ),
-    distanceMeters(
-      firstEnd.lat,
-      firstEnd.lon,
-      secondStart.lat,
-      secondStart.lon
+    distanceBetweenPoints(
+      firstEnd,
+      secondStart
     ),
-    distanceMeters(
-      firstEnd.lat,
-      firstEnd.lon,
-      secondEnd.lat,
-      secondEnd.lon
+    distanceBetweenPoints(
+      firstEnd,
+      secondEnd
     ),
   ]
 
-  return distances.some(
-    (distance) =>
-      distance <=
-      CONNECTIVITY_THRESHOLD_METERS
+  if (
+    endpointDistances.some(
+      distance =>
+        distance <= endpointThresholdMeters
+    )
+  ) {
+    return true
+  }
+
+  const geometryThresholdMeters = 10
+
+  for (const firstPoint of firstGeometry) {
+    for (const secondPoint of secondGeometry) {
+      if (
+        distanceBetweenPoints(
+          firstPoint,
+          secondPoint
+        ) <= geometryThresholdMeters
+      ) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+function waysShareHikingRelation(
+  firstWayId: number,
+  secondWayId: number,
+  relationWayIds: Map<number, number[]>
+): boolean {
+  const firstRelations =
+    relationWayIds.get(firstWayId) ?? []
+
+  const secondRelations =
+    relationWayIds.get(secondWayId) ?? []
+
+  if (
+    firstRelations.length === 0 ||
+    secondRelations.length === 0
+  ) {
+    return false
+  }
+
+  const secondRelationSet =
+    new Set(secondRelations)
+
+  return firstRelations.some(
+    (relationId) =>
+      secondRelationSet.has(relationId)
   )
 }
 
@@ -420,15 +495,15 @@ export function groupTrails(
             waysAreConnected(
               current.way,
               candidate.way
+            ) ||
+            waysShareHikingRelation(
+              current.way.id,
+              candidate.way.id,
+              relationWayIds
             )
           ) {
-            visited.add(
-              candidate.way.id
-            )
-
-            queue.push(
-              candidate
-            )
+            visited.add(candidate.way.id)
+            queue.push(candidate)
           }
         }
       }

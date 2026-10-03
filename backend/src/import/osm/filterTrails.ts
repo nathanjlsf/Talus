@@ -44,7 +44,10 @@ export function isImportCandidate(
     name.includes("7-eleven") ||
     name.includes("7 eleven") ||
     name.includes("do not enter") ||
-    name.includes("not a trail")
+    name.includes("not a trail") ||
+    name === "dead end" ||
+    name === "overgrown" ||
+    name === "walking path"
   ) {
     return false
   }
