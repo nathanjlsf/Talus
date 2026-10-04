@@ -7,7 +7,7 @@ import { point } from "@turf/helpers"
 import db from "../../db/database.js"
 
 import {
-  getTrailGeometry,
+  getTrailGeometryLines,
 } from "../../repositories/trailGeometryRepository.js"
 
 const SHAPEFILE_PATH =
@@ -110,22 +110,22 @@ function distanceMeters(
   return earthRadius * c
 }
 
-function getTrailLength(
-  geometry: TrailPoint[]
+function lineLength(
+  line: TrailPoint[]
 ): number {
   let total = 0
 
   for (
     let index = 1;
-    index < geometry.length;
+    index < line.length;
     index++
   ) {
     total +=
       distanceMeters(
-        geometry[index - 1]!.latitude,
-        geometry[index - 1]!.longitude,
-        geometry[index]!.latitude,
-        geometry[index]!.longitude
+        line[index - 1]!.latitude,
+        line[index - 1]!.longitude,
+        line[index]!.latitude,
+        line[index]!.longitude
       )
   }
 
@@ -133,14 +133,16 @@ function getTrailLength(
 }
 
 function getTrailPlace(
-  geometry: TrailPoint[],
+  lines: TrailPoint[][],
   boundaries: PlaceBoundary[]
 ): {
   name: string
   percentage: number
 } | null {
-  const totalMeters =
-    getTrailLength(geometry)
+  const totalMeters = lines.reduce(
+    (total, line) => total + lineLength(line),
+    0
+  )
 
   if (totalMeters === 0) {
     return null
@@ -149,16 +151,17 @@ function getTrailPlace(
   const matches =
     new Map<string, number>()
 
-  for (
-    let index = 1;
-    index < geometry.length;
-    index++
-  ) {
-    const previous =
-      geometry[index - 1]!
+  for (const line of lines) {
+    for (
+      let index = 1;
+      index < line.length;
+      index++
+    ) {
+      const previous =
+        line[index - 1]!
 
-    const current =
-      geometry[index]!
+      const current =
+        line[index]!
 
     const segmentLength =
       distanceMeters(
@@ -200,6 +203,7 @@ function getTrailPlace(
           ) + segmentLength
         )
       }
+    }
     }
   }
 
@@ -271,19 +275,18 @@ async function main() {
   let unmatched = 0
 
   for (const trail of trails) {
-    const geometry =
-      getTrailGeometry(
-        trail.id
-      )
+    const lines =
+      getTrailGeometryLines(trail.id)
+        .filter((line) => line.length >= 2)
 
-    if (geometry.length < 2) {
+    if (lines.length === 0) {
       unmatched++
       continue
     }
 
     const match =
       getTrailPlace(
-        geometry,
+        lines,
         boundaries
       )
 

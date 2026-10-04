@@ -8,12 +8,15 @@ import {
 import { ArrowLeft, Check, Mountain, Sparkles } from "lucide-react"
 
 import StickyActionBar from "../components/StickyActionBar"
+import TrailMap from "../components/TrailMap"
 import {
   getCurrentTalusUser,
   getTrail,
+  getTrailGeometry,
   getRanking,
   type RankedTrail,
   type Trail,
+  type TrailMapFeature,
 } from "../services/api"
 
 function TrailDetail() {
@@ -24,6 +27,8 @@ function TrailDetail() {
   const [trail, setTrail] = useState<Trail | null>(null)
   const [recommendation, setRecommendation] =
     useState<RankedTrail | null>(null)
+  const [route, setRoute] =
+    useState<TrailMapFeature | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -42,12 +47,14 @@ function TrailDetail() {
 
         const user = await getCurrentTalusUser()
 
-        const [trailData, ranking] = await Promise.all([
+        const [trailData, ranking, geometry] = await Promise.all([
           getTrail(trailId),
           getRanking(user.id),
+          getTrailGeometry(trailId).catch(() => null),
         ])
 
         setTrail(trailData)
+        setRoute(geometry)
 
         const rankedTrail = ranking.find(
           (item) => item.trail.id === trailId
@@ -138,6 +145,24 @@ function TrailDetail() {
           )
         )}
       </div>
+
+      {route && (
+        <div className="mt-6 h-64 overflow-hidden rounded-3xl border border-[#d8d2c4] md:mt-8">
+          <TrailMap
+            features={[
+              {
+                ...route,
+                properties: {
+                  ...route.properties,
+                  score: 80,
+                },
+              },
+            ]}
+            bounds={routeBounds(route)}
+            fitOnce={false}
+          />
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:mt-8 md:gap-5 lg:grid-cols-5">
         <div className="rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] p-4 md:p-5">
@@ -337,6 +362,33 @@ function TrailDetail() {
       </StickyActionBar>
     </section>
   )
+}
+
+function routeBounds(
+  feature: TrailMapFeature
+): [number, number, number, number] {
+  let west = Infinity
+  let south = Infinity
+  let east = -Infinity
+  let north = -Infinity
+
+  for (const line of feature.geometry.coordinates) {
+    for (const [longitude, latitude] of line) {
+      if (
+        longitude === undefined ||
+        latitude === undefined
+      ) {
+        continue
+      }
+
+      west = Math.min(west, longitude)
+      east = Math.max(east, longitude)
+      south = Math.min(south, latitude)
+      north = Math.max(north, latitude)
+    }
+  }
+
+  return [west, south, east, north]
 }
 
 export default TrailDetail

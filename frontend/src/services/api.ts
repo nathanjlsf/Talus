@@ -171,6 +171,69 @@ export async function recalculatePreferences(
   return response.json()
 }
 
+export interface TrailMapFeature {
+  type: "Feature"
+  geometry: {
+    type: "MultiLineString"
+    coordinates: number[][][]
+  }
+  properties: {
+    id: number
+    name: string
+    score: number
+    reason: string | null
+    distance_miles: number
+    elevation_gain_feet: number
+    difficulty: string
+    location: string | null
+    park_name: string | null
+    county: string | null
+  }
+}
+
+export interface TrailMapCollection {
+  type: "FeatureCollection"
+  bounds: [number, number, number, number] | null
+  features: TrailMapFeature[]
+}
+
+export async function getMapTrails(
+  userId: number,
+  bbox?: string
+): Promise<TrailMapCollection> {
+  const params = new URLSearchParams({
+    userId: String(userId),
+  })
+
+  if (bbox) {
+    params.set("bbox", bbox)
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/trails/map?${params}`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load the trail map")
+  }
+
+  return response.json()
+}
+
+export async function getTrailGeometry(
+  trailId: number
+): Promise<TrailMapFeature> {
+  const response = await fetch(
+    `${API_BASE_URL}/trails/${trailId}/geometry`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load trail route")
+  }
+
+  return response.json()
+}
+
 export async function getRanking(
   userId: number
 ): Promise<RankedTrail[]> {

@@ -21,6 +21,7 @@ export interface Trail {
   forest_score: number | null
   water_score: number | null
   coastal_score: number | null
+  county?: string | null
   source?: string | null
   source_id?: string | null
   created_at: string

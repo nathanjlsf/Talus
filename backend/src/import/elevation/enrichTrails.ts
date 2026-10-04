@@ -1,7 +1,7 @@
 import db from "../../db/database.js"
 
 import {
-  getTrailGeometry,
+  getTrailGeometryLines,
 } from "../../repositories/trailGeometryRepository.js"
 
 import {
@@ -101,41 +101,49 @@ async function enrichTrail(
   )
 
   try {
-    const geometry =
-      getTrailGeometry(trail.id)
+    const lines =
+      getTrailGeometryLines(trail.id)
+        .filter((line) => line.length >= 2)
 
-    if (geometry.length < 2) {
+    if (lines.length === 0) {
       throw new Error(
         "Insufficient geometry"
       )
     }
 
-    const sampled =
-      sampleGeometry(
-        geometry.map((point) => ({
-          latitude: point.latitude,
-          longitude: point.longitude,
-        }))
-      )
+    let elevationGain = 0
+    let sampleCount = 0
 
-    const elevations = []
-
-    for (const point of sampled) {
-      const elevation =
-        await getElevationFromDem(
-          point.latitude,
-          point.longitude
+    for (const line of lines) {
+      const sampled =
+        sampleGeometry(
+          line.map((point) => ({
+            latitude: point.latitude,
+            longitude: point.longitude,
+          }))
         )
 
-      elevations.push({
-        elevation_feet: elevation,
-      })
-    }
+      const lineElevations = []
 
-    const elevationGain =
-      calculateElevationGain(
-        elevations
-      )
+      for (const point of sampled) {
+        const elevation =
+          await getElevationFromDem(
+            point.latitude,
+            point.longitude
+          )
+
+        lineElevations.push({
+          elevation_feet: elevation,
+        })
+      }
+
+      elevationGain +=
+        calculateElevationGain(
+          lineElevations
+        )
+
+      sampleCount += sampled.length
+    }
 
     updateTrailElevationGain(
       trail.id,
@@ -152,7 +160,7 @@ async function enrichTrail(
 
     console.log(
       `  ${trail.name}: ${elevationGain} ft ` +
-      `(${sampled.length} samples)`
+      `(${sampleCount} samples)`
     )
 
     return elevationGain

@@ -47,6 +47,16 @@ CREATE TABLE IF NOT EXISTS trail_geometry (
     UNIQUE(trail_id, way_id, sequence)
 );
 
+CREATE TABLE IF NOT EXISTS trail_bounds (
+    trail_id INTEGER PRIMARY KEY,
+    min_latitude REAL NOT NULL,
+    max_latitude REAL NOT NULL,
+    min_longitude REAL NOT NULL,
+    max_longitude REAL NOT NULL,
+
+    FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS elevation_cache (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 

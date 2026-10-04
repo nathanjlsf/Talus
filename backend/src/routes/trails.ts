@@ -8,6 +8,15 @@ import {
   searchTrailList,
 } from "../services/trailService.js"
 
+import {
+  getMapTrails,
+  getTrailGeometryFeature,
+} from "../services/trailMapService.js"
+
+import {
+  parseBbox,
+} from "../geo/trailLines.js"
+
 const router = Router()
 
 router.get("/", (req, res) => {
@@ -49,6 +58,60 @@ router.get("/", (req, res) => {
   const trails = listTrails()
 
   res.json(trails)
+})
+
+router.get("/map", (req, res) => {
+  const userId = Number(req.query.userId)
+
+  if (!Number.isInteger(userId)) {
+    res.status(400).json({
+      error: "userId is required",
+    })
+
+    return
+  }
+
+  const bbox = String(req.query.bbox ?? "").trim()
+  const bounds = bbox ? parseBbox(bbox) : null
+
+  if (bbox && !bounds) {
+    res.status(400).json({
+      error: "bbox must be west,south,east,north",
+    })
+
+    return
+  }
+
+  res.json(
+    getMapTrails({
+      userId,
+      bounds,
+    })
+  )
+})
+
+router.get("/:id/geometry", (req, res) => {
+  const id = Number(req.params.id)
+
+  if (!Number.isInteger(id)) {
+    res.status(400).json({
+      error: "Invalid trail ID",
+    })
+
+    return
+  }
+
+  const feature = getTrailGeometryFeature(id)
+
+  if (!feature) {
+    res.status(404).json({
+      error: "Trail geometry not found",
+    })
+
+    return
+  }
+
+  res.json(feature)
 })
 
 router.get("/:id", (req, res) => {

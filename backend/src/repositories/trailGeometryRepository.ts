@@ -1,10 +1,54 @@
 import db from "../db/database.js"
 
+import {
+  boundsFromPoints,
+  groupPointsByWay,
+} from "../geo/trailLines.js"
+
 export interface TrailGeometryPoint {
   way_id: number
   sequence: number
   latitude: number
   longitude: number
+}
+
+function saveTrailBounds(
+  trailId: number,
+  points: TrailGeometryPoint[]
+) {
+  const bounds = boundsFromPoints(points)
+
+  if (!bounds) {
+    db.prepare(`
+      DELETE FROM trail_bounds
+      WHERE trail_id = ?
+    `).run(trailId)
+
+    return
+  }
+
+  db.prepare(`
+    INSERT INTO trail_bounds (
+      trail_id,
+      min_latitude,
+      max_latitude,
+      min_longitude,
+      max_longitude
+    )
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(trail_id)
+    DO UPDATE SET
+      min_latitude = excluded.min_latitude,
+      max_latitude = excluded.max_latitude,
+      min_longitude = excluded.min_longitude,
+      max_longitude = excluded.max_longitude
+  `).run(
+    trailId,
+    bounds.minLatitude,
+    bounds.maxLatitude,
+    bounds.minLongitude,
+    bounds.maxLongitude
+  )
 }
 
 export function replaceTrailGeometry(
@@ -43,6 +87,8 @@ export function replaceTrailGeometry(
         point.longitude
       )
     }
+
+    saveTrailBounds(trailId, points)
   })
 
   replace()
@@ -61,10 +107,45 @@ export function getTrailGeometry(
         longitude
       FROM trail_geometry
       WHERE trail_id = ?
-      ORDER BY sequence
+      ORDER BY way_id, sequence
       `
     )
     .all(trailId) as TrailGeometryPoint[]
+}
+
+export function getTrailGeometryLines(
+  trailId: number
+): TrailGeometryPoint[][] {
+  return groupPointsByWay(
+    getTrailGeometry(trailId)
+  )
+}
+
+export function backfillTrailBounds(): number {
+  const result = db.prepare(`
+    INSERT INTO trail_bounds (
+      trail_id,
+      min_latitude,
+      max_latitude,
+      min_longitude,
+      max_longitude
+    )
+    SELECT
+      trail_id,
+      MIN(latitude),
+      MAX(latitude),
+      MIN(longitude),
+      MAX(longitude)
+    FROM trail_geometry
+    GROUP BY trail_id
+    ON CONFLICT(trail_id) DO UPDATE SET
+      min_latitude = excluded.min_latitude,
+      max_latitude = excluded.max_latitude,
+      min_longitude = excluded.min_longitude,
+      max_longitude = excluded.max_longitude
+  `).run()
+
+  return result.changes
 }
 
 export interface TrailCenterPoint {

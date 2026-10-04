@@ -10,6 +10,7 @@ import experienceRoutes from "./routes/experiences.js"
 import usersRouter from "./routes/users.js"
 import { backfillEstimatedDifficulty } from "./import/osm/applyEstimatedDifficulty.js"
 import { backfillMissingPreferredRanges } from "./services/preferenceService.js"
+import { backfillTrailBounds } from "./repositories/trailGeometryRepository.js"
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3000
@@ -51,9 +52,15 @@ try {
   const preferences =
     backfillMissingPreferredRanges()
 
-  if (estimated > 0 || preferences > 0) {
+  const bounds = backfillTrailBounds()
+
+  if (
+    estimated > 0 ||
+    preferences > 0 ||
+    bounds > 0
+  ) {
     console.log(
-      `Backfilled ${estimated} trail difficulties and ${preferences} preference profiles.`
+      `Backfilled ${estimated} trail difficulties, ${preferences} preference profiles, and ${bounds} trail bounds.`
     )
   }
 } catch (error) {

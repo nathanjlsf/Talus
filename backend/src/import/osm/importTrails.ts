@@ -398,14 +398,12 @@ export async function importBayAreaTrails() {
           county,
       })
 
-    let geometrySequence = 0
-
     const geometryPoints = group.ways.flatMap(
       (way) =>
         (way.geometry ?? []).map(
-          (point) => ({
+          (point, sequence) => ({
             way_id: way.id,
-            sequence: geometrySequence++,
+            sequence,
             latitude: point.lat,
             longitude: point.lon,
           })
