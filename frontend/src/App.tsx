@@ -8,6 +8,7 @@ import HikeDNA from "./pages/HikeDNA"
 import TrailDetail from "./pages/TrailDetail"
 import Home from "./pages/Home"
 import Activities from "./pages/Activities"
+import HikeSummary from "./pages/HikeSummary"
 import Onboarding from "./pages/Onboarding"
 import Experience from "./pages/Experience"
 import PastHikes from "./pages/PastHikes"
@@ -48,6 +49,7 @@ function App() {
         <Route path="add-hike" element={<AddHike />} />
         <Route path="hike-dna" element={<HikeDNA />} />
         <Route path="activities" element={<Activities />} />
+        <Route path="activities/:activityId" element={<HikeSummary />} />
         <Route
           path="activities/:activityId/experience"
           element={<Experience />}

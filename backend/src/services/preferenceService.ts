@@ -41,6 +41,15 @@ import {
   calculatePreferredRanges,
 } from "../ranking/preferredRange.js"
 
+import { listRecordedHikeRows } from "../repositories/activityRepository.js"
+
+import {
+  calculateTrackSignal,
+  paceRatioFor,
+  trackSweetSpotRating,
+  type RecordedHike,
+} from "../ranking/trackSignal.js"
+
 export function listComparisonsForUser(
   userId: number
 ) {
@@ -112,10 +121,47 @@ export function calculateUserExperienceSignal(
   )
 }
 
+function recordedHikesForUser(
+  userId: number
+): RecordedHike[] {
+  return listRecordedHikeRows(userId).map((row) => ({
+    trail: {
+      distance_miles: row.distance_miles,
+      elevation_gain_feet: row.elevation_gain_feet,
+      elevation_status: row.elevation_status,
+      difficulty: row.difficulty,
+      terrain: row.terrain,
+      scenic_score: row.scenic_score,
+      nature_score: row.nature_score,
+      solitude_score: row.solitude_score,
+      forest_score: row.forest_score,
+      water_score: row.water_score,
+      coastal_score: row.coastal_score,
+    },
+    completionFraction: row.completion_fraction,
+    turnedAround: row.turned_around === 1,
+    paceRatio: paceRatioFor(
+      row.pace_seconds_per_mile,
+      row.estimated_time_minutes,
+      row.distance_miles
+    ),
+    longStopCount: row.long_stop_count ?? 0,
+    viewMoments: row.view_moments ?? 0,
+    climbMoments: row.climb_moments ?? 0,
+    restMoments: row.rest_moments ?? 0,
+  }))
+}
+
 export function calculateCombinedPreferences(
   userId: number
 ): UserPreference[] {
   const trails = getAllTrails()
+
+  const recordedHikes =
+    recordedHikesForUser(userId)
+
+  const trackResult =
+    calculateTrackSignal(recordedHikes)
 
   const pairwisePreferences =
     calculateUserPreferences(userId, trails)
@@ -146,10 +192,26 @@ export function calculateCombinedPreferences(
             comparison.loser_trail_id,
         })),
         trailsById,
-        experiences.map((experience) => ({
-          trail: experience.trail,
-          rating: experience.overall_rating,
-        }))
+        [
+          ...experiences.map((experience) => ({
+            trail: experience.trail,
+            rating: experience.overall_rating,
+          })),
+          ...recordedHikes.flatMap((hike) => {
+            const rating = trackSweetSpotRating(hike)
+
+            if (rating === null) {
+              return []
+            }
+
+            return [
+              {
+                trail: hike.trail,
+                rating,
+              },
+            ]
+          }),
+        ]
       )
     )
 
@@ -173,9 +235,13 @@ export function calculateCombinedPreferences(
       const pairwiseEvidence =
         comparisons.length
 
+      const trackEvidence =
+        trackResult.evidence[attribute]
+
       if (
         pairwiseEvidence === 0 &&
-        experienceEvidence === 0
+        experienceEvidence === 0 &&
+        trackEvidence === 0
       ) {
         return preference
       }
@@ -191,6 +257,10 @@ export function calculateCombinedPreferences(
         50 +
         experienceSignal * 50
 
+      const trackScore =
+        50 +
+        trackResult.signal[attribute] * 50
+
       const pairwiseStrength =
         1 -
         Math.exp(
@@ -203,9 +273,16 @@ export function calculateCombinedPreferences(
           -experienceEvidence / 4
         )
 
+      const trackStrength =
+        1 -
+        Math.exp(
+          -trackEvidence / 4
+        )
+
       const totalStrength =
         pairwiseStrength +
-        experienceStrength
+        experienceStrength +
+        trackStrength
 
       if (totalStrength === 0) {
         return preference
@@ -216,7 +293,9 @@ export function calculateCombinedPreferences(
           preference.score *
             pairwiseStrength +
           experienceScore *
-            experienceStrength
+            experienceStrength +
+          trackScore *
+            trackStrength
         ) / totalStrength
 
       const combinedConfidence =
@@ -226,7 +305,8 @@ export function calculateCombinedPreferences(
             Math.exp(
               -(
                 pairwiseEvidence +
-                experienceEvidence
+                experienceEvidence +
+                trackEvidence
               ) / 5
             )
         )

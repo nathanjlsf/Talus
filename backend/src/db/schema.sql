@@ -76,16 +76,41 @@ CREATE TABLE IF NOT EXISTS activities (
 
     started_at TEXT,
     ended_at TEXT,
+    status TEXT,
 
     distance_miles REAL,
     elevation_gain_feet INTEGER,
     duration_seconds INTEGER,
+    moving_seconds INTEGER,
+    pace_seconds_per_mile REAL,
+    completion_fraction REAL,
+    turned_around INTEGER,
+    long_stop_count INTEGER,
+    view_moments INTEGER,
+    climb_moments INTEGER,
+    rest_moments INTEGER,
+    elevation_profile TEXT,
 
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS activity_points (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    activity_id INTEGER NOT NULL,
+    recorded_at TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    accuracy REAL,
+    moment TEXT,
+
+    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_points_activity
+    ON activity_points (activity_id, recorded_at);
 
 CREATE TABLE IF NOT EXISTS experiences (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

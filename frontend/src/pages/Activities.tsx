@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router"
 
 import {
   getActivities,
@@ -126,7 +126,12 @@ function Activities() {
               <div className="flex items-start justify-between gap-4 md:gap-6">
                 <div className="min-w-0">
                   <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
-                    {activity.trail.name}
+                    <Link
+                      to={`/activities/${activity.id}`}
+                      className="hover:underline"
+                    >
+                      {activity.trail.name}
+                    </Link>
                   </h2>
 
                   <p className="mt-1 text-sm text-[#687565]">

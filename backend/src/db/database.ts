@@ -142,6 +142,18 @@ addColumnIfMissing(
 )
 
 addColumnIfMissing(
+  "trails",
+  "forest_score",
+  "REAL"
+)
+
+addColumnIfMissing(
+  "trails",
+  "coastal_score",
+  "REAL"
+)
+
+addColumnIfMissing(
   "users",
   "supabase_user_id",
   "TEXT"
@@ -158,6 +170,27 @@ addColumnIfMissing(
   "tolerance",
   "REAL"
 )
+
+const activityColumns = [
+  ["status", "TEXT"],
+  ["moving_seconds", "INTEGER"],
+  ["pace_seconds_per_mile", "REAL"],
+  ["completion_fraction", "REAL"],
+  ["turned_around", "INTEGER"],
+  ["long_stop_count", "INTEGER"],
+  ["view_moments", "INTEGER"],
+  ["climb_moments", "INTEGER"],
+  ["rest_moments", "INTEGER"],
+  ["elevation_profile", "TEXT"],
+] as const
+
+for (const [columnName, definition] of activityColumns) {
+  addColumnIfMissing(
+    "activities",
+    columnName,
+    definition
+  )
+}
 
 const trailUpdates = [
   {

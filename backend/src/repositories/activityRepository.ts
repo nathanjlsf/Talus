@@ -6,9 +6,19 @@ export interface Activity {
   trail_id: number
   started_at: string | null
   ended_at: string | null
+  status: string | null
   distance_miles: number | null
   elevation_gain_feet: number | null
   duration_seconds: number | null
+  moving_seconds: number | null
+  pace_seconds_per_mile: number | null
+  completion_fraction: number | null
+  turned_around: number | null
+  long_stop_count: number | null
+  view_moments: number | null
+  climb_moments: number | null
+  rest_moments: number | null
+  elevation_profile: string | null
   created_at: string
 }
 
@@ -125,9 +135,19 @@ export function getActivitiesForUser(
     trail_id: activity.trail_id,
     started_at: activity.started_at,
     ended_at: activity.ended_at,
+    status: null,
     distance_miles: activity.distance_miles,
     elevation_gain_feet: activity.elevation_gain_feet,
     duration_seconds: activity.duration_seconds,
+    moving_seconds: null,
+    pace_seconds_per_mile: null,
+    completion_fraction: null,
+    turned_around: null,
+    long_stop_count: null,
+    view_moments: null,
+    climb_moments: null,
+    rest_moments: null,
+    elevation_profile: null,
     created_at: activity.created_at,
 
     trail: {
@@ -204,9 +224,19 @@ export function getActivityWithTrailById(
     trail_id: row.trail_id,
     started_at: row.started_at,
     ended_at: row.ended_at,
+    status: null,
     distance_miles: row.distance_miles,
     elevation_gain_feet: row.elevation_gain_feet,
     duration_seconds: row.duration_seconds,
+    moving_seconds: null,
+    pace_seconds_per_mile: null,
+    completion_fraction: null,
+    turned_around: null,
+    long_stop_count: null,
+    view_moments: null,
+    climb_moments: null,
+    rest_moments: null,
+    elevation_profile: null,
     created_at: row.created_at,
 
     trail: {
@@ -217,4 +247,166 @@ export function getActivityWithTrailById(
 
     experience: null,
   }
+}
+
+export interface RecordingResult {
+  ended_at: string
+  distance_miles: number
+  elevation_gain_feet: number | null
+  duration_seconds: number
+  moving_seconds: number
+  pace_seconds_per_mile: number | null
+  completion_fraction: number | null
+  turned_around: boolean
+  long_stop_count: number
+  view_moments: number
+  climb_moments: number
+  rest_moments: number
+  elevation_profile: string
+}
+
+export function markActivityRecording(
+  activityId: number
+): void {
+  db.prepare(
+    `
+    UPDATE activities
+    SET status = 'recording'
+    WHERE id = ?
+    `
+  ).run(activityId)
+}
+
+export function saveRecordingResult(
+  activityId: number,
+  result: RecordingResult
+): void {
+  db.prepare(
+    `
+    UPDATE activities
+    SET
+      status = 'finished',
+      ended_at = ?,
+      distance_miles = ?,
+      elevation_gain_feet = ?,
+      duration_seconds = ?,
+      moving_seconds = ?,
+      pace_seconds_per_mile = ?,
+      completion_fraction = ?,
+      turned_around = ?,
+      long_stop_count = ?,
+      view_moments = ?,
+      climb_moments = ?,
+      rest_moments = ?,
+      elevation_profile = ?
+    WHERE id = ?
+    `
+  ).run(
+    result.ended_at,
+    result.distance_miles,
+    result.elevation_gain_feet,
+    result.duration_seconds,
+    result.moving_seconds,
+    result.pace_seconds_per_mile,
+    result.completion_fraction,
+    result.turned_around ? 1 : 0,
+    result.long_stop_count,
+    result.view_moments,
+    result.climb_moments,
+    result.rest_moments,
+    result.elevation_profile,
+    activityId
+  )
+}
+
+export interface RecordedHikeRow {
+  completion_fraction: number
+  turned_around: number | null
+  pace_seconds_per_mile: number | null
+  long_stop_count: number | null
+  view_moments: number | null
+  climb_moments: number | null
+  rest_moments: number | null
+  distance_miles: number
+  elevation_gain_feet: number
+  elevation_status: string | null
+  difficulty: string
+  terrain: string | null
+  scenic_score: number | null
+  nature_score: number | null
+  solitude_score: number | null
+  forest_score: number | null
+  water_score: number | null
+  coastal_score: number | null
+  estimated_time_minutes: number
+}
+
+export function listRecordedHikeRows(
+  userId: number
+): RecordedHikeRow[] {
+  return db
+    .prepare(
+      `
+      SELECT
+        activities.completion_fraction,
+        activities.turned_around,
+        activities.pace_seconds_per_mile,
+        activities.long_stop_count,
+        activities.view_moments,
+        activities.climb_moments,
+        activities.rest_moments,
+        trails.distance_miles,
+        trails.elevation_gain_feet,
+        trails.elevation_status,
+        trails.difficulty,
+        trails.terrain,
+        trails.scenic_score,
+        trails.nature_score,
+        trails.solitude_score,
+        trails.forest_score,
+        trails.water_score,
+        trails.coastal_score,
+        trails.estimated_time_minutes
+      FROM activities
+      JOIN trails
+        ON trails.id = activities.trail_id
+      WHERE activities.user_id = ?
+        AND activities.completion_fraction IS NOT NULL
+      `
+    )
+    .all(userId) as RecordedHikeRow[]
+}
+
+export interface HikedTrailRow {
+  trailId: number
+  latestAt: string
+  name: string
+  location: string | null
+  distance_miles: number
+  elevation_gain_feet: number
+}
+
+export function listHikedTrails(
+  userId: number,
+  excludeTrailId: number
+): HikedTrailRow[] {
+  return db
+    .prepare(
+      `
+      SELECT
+        trails.id AS trailId,
+        MAX(COALESCE(activities.started_at, activities.created_at)) AS latestAt,
+        trails.name,
+        trails.location,
+        trails.distance_miles,
+        trails.elevation_gain_feet
+      FROM activities
+      JOIN trails
+        ON trails.id = activities.trail_id
+      WHERE activities.user_id = ?
+        AND trails.id != ?
+      GROUP BY trails.id
+      `
+    )
+    .all(userId, excludeTrailId) as HikedTrailRow[]
 }

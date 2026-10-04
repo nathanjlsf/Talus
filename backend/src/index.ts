@@ -20,7 +20,12 @@ const FRONTEND_URL =
 
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: [
+      FRONTEND_URL,
+      "https://localhost",
+      "http://localhost",
+      "capacitor://localhost",
+    ],
   }),
 )
 

@@ -370,6 +370,135 @@ export async function getActivities(
   return response.json()
 }
 
+export type MomentMark = "view" | "climb" | "rest"
+
+export interface TrackPointInput {
+  recorded_at: string
+  latitude: number
+  longitude: number
+  accuracy: number | null
+  moment: MomentMark | null
+}
+
+export interface ElevationSample {
+  distance_miles: number
+  elevation_feet: number
+}
+
+export interface HikeSummary {
+  activity: {
+    id: number
+    user_id: number
+    trail_id: number
+    started_at: string | null
+    ended_at: string | null
+    distance_miles: number | null
+    elevation_gain_feet: number | null
+    duration_seconds: number | null
+    moving_seconds: number | null
+    pace_seconds_per_mile: number | null
+    completion_fraction: number | null
+  }
+  trail: {
+    id: number
+    name: string
+    location: string | null
+    distance_miles: number
+    elevation_gain_feet: number
+    estimated_time_minutes: number
+  }
+  learned: string[]
+  splits: Array<{ mile: number; seconds: number }>
+  route: {
+    type: "LineString"
+    coordinates: number[][]
+  } | null
+  elevation_profile: ElevationSample[]
+  placement: Array<{
+    id: number
+    name: string
+    location: string | null
+    distance_miles: number
+    elevation_gain_feet: number
+  }>
+}
+
+export async function startRecording(
+  userId: number,
+  trailId: number
+): Promise<{ id: number; started_at: string | null }> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/start`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        trail_id: trailId,
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to start recording")
+  }
+
+  return response.json()
+}
+
+export async function uploadActivityPoints(
+  activityId: number,
+  points: TrackPointInput[]
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/${activityId}/points`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ points }),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to upload track points")
+  }
+}
+
+export async function finishRecording(
+  activityId: number
+): Promise<HikeSummary> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/${activityId}/finish`,
+    {
+      method: "POST",
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to finish the hike")
+  }
+
+  return response.json()
+}
+
+export async function getHikeSummary(
+  activityId: number
+): Promise<HikeSummary> {
+  const response = await fetch(
+    `${API_BASE_URL}/activities/${activityId}/summary`
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to load the hike")
+  }
+
+  return response.json()
+}
+
 export async function getActivity(
   activityId: number
 ): Promise<Activity> {
