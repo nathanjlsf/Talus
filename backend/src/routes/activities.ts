@@ -1,4 +1,4 @@
-import { Router } from "express"
+import { Router, type Response } from "express"
 
 import {
   findActivityById,
@@ -18,6 +18,30 @@ import type {
 } from "../repositories/activityPointRepository.js"
 
 import type { MomentMark } from "../ranking/trackStats.js"
+
+import { activityOwnedByUser } from "../auth/activityAccess.js"
+import {
+  requireTalusUser,
+  talusUserId,
+} from "../auth/requireUser.js"
+import { getActivityById } from "../repositories/activityRepository.js"
+
+function ownedActivity(
+  activityId: number,
+  res: Response
+) {
+  const activity = getActivityById(activityId)
+
+  if (!activityOwnedByUser(activity, talusUserId(res))) {
+    res.status(404).json({
+      error: "Activity not found",
+    })
+
+    return undefined
+  }
+
+  return activity
+}
 
 const MOMENTS = new Set<MomentMark>([
   "view",
@@ -84,6 +108,8 @@ function parsePoints(
 
 const router = Router()
 
+router.use(requireTalusUser)
+
 router.get("/id/:activityId", (req, res) => {
   const activityId = Number(req.params.activityId)
 
@@ -92,6 +118,10 @@ router.get("/id/:activityId", (req, res) => {
       error: "Invalid activity ID",
     })
 
+    return
+  }
+
+  if (!ownedActivity(activityId, res)) {
     return
   }
 
@@ -108,31 +138,18 @@ router.get("/id/:activityId", (req, res) => {
   res.json(activity)
 })
 
-router.get("/:userId", (req, res) => {
-  const userId = Number(req.params.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
-  const activities = listActivitiesForUser(userId)
+router.get("/:userId", (_req, res) => {
+  const activities = listActivitiesForUser(talusUserId(res))
 
   res.json(activities)
 })
 
 router.post("/start", (req, res) => {
-  const { user_id, trail_id } = req.body
+  const { trail_id } = req.body
 
-  if (
-    !Number.isInteger(user_id) ||
-    !Number.isInteger(trail_id)
-  ) {
+  if (!Number.isInteger(trail_id)) {
     res.status(400).json({
-      error: "user_id and trail_id must be integers",
+      error: "trail_id must be an integer",
     })
 
     return
@@ -140,7 +157,7 @@ router.post("/start", (req, res) => {
 
   try {
     const activity = startRecording({
-      user_id,
+      user_id: talusUserId(res),
       trail_id,
     })
 
@@ -164,6 +181,10 @@ router.post("/:activityId/points", (req, res) => {
       error: "Invalid activity points",
     })
 
+    return
+  }
+
+  if (!ownedActivity(activityId, res)) {
     return
   }
 
@@ -197,6 +218,10 @@ router.post("/:activityId/finish", async (req, res) => {
     return
   }
 
+  if (!ownedActivity(activityId, res)) {
+    return
+  }
+
   try {
     const summary = await finishRecording(activityId)
 
@@ -222,6 +247,10 @@ router.get("/:activityId/summary", (req, res) => {
     return
   }
 
+  if (!ownedActivity(activityId, res)) {
+    return
+  }
+
   try {
     res.json(getHikeSummary(activityId))
   } catch (error) {
@@ -238,7 +267,6 @@ router.get("/:activityId/summary", (req, res) => {
 
 router.post("/", (req, res) => {
   const {
-    user_id,
     trail_id,
     started_at,
     ended_at,
@@ -247,12 +275,9 @@ router.post("/", (req, res) => {
     duration_seconds,
   } = req.body
 
-  if (
-    !Number.isInteger(user_id) ||
-    !Number.isInteger(trail_id)
-  ) {
+  if (!Number.isInteger(trail_id)) {
     res.status(400).json({
-      error: "user_id and trail_id must be integers",
+      error: "trail_id must be an integer",
     })
 
     return
@@ -260,7 +285,7 @@ router.post("/", (req, res) => {
 
   try {
     const activity = recordActivity({
-      user_id,
+      user_id: talusUserId(res),
       trail_id,
       started_at,
       ended_at,

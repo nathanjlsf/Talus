@@ -14,17 +14,17 @@ import {
   selectComparisonPairs,
 } from "../ranking/comparisonSelector.js"
 
+import {
+  requireTalusUser,
+  talusUserId,
+} from "../auth/requireUser.js"
+
 const router = Router()
 
-router.get("/next/:userId", (req, res) => {
-  const userId = Number(req.params.userId)
+router.use(requireTalusUser)
 
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-    return
-  }
+router.get("/next/:userId", (req, res) => {
+  const userId = talusUserId(res)
 
   const trails = getAllTrails()
 
@@ -108,36 +108,24 @@ router.get("/next/:userId", (req, res) => {
   })
 })
 
-router.get("/:userId", (req, res) => {
-  const userId = Number(req.params.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
-  const comparisons = listComparisonsForUser(userId)
+router.get("/:userId", (_req, res) => {
+  const comparisons = listComparisonsForUser(talusUserId(res))
 
   res.json(comparisons)
 })
 
 router.post("/", (req, res) => {
   const {
-    user_id,
     winner_trail_id,
     loser_trail_id,
   } = req.body
 
   if (
-    !Number.isInteger(user_id) ||
     !Number.isInteger(winner_trail_id) ||
     !Number.isInteger(loser_trail_id)
   ) {
     res.status(400).json({
-      error: "user_id, winner_trail_id, and loser_trail_id must be integers",
+      error: "winner_trail_id and loser_trail_id must be integers",
     })
 
     return
@@ -145,7 +133,7 @@ router.post("/", (req, res) => {
 
   try {
     const comparison = recordComparison({
-      user_id,
+      user_id: talusUserId(res),
       winner_trail_id,
       loser_trail_id,
     })

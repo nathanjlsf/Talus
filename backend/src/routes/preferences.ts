@@ -17,37 +17,24 @@ import {
   describePreferredRange,
 } from "../ranking/preferredRange.js"
 
+import {
+  requireTalusUser,
+  talusUserId,
+} from "../auth/requireUser.js"
+
 const router = Router()
 
-router.get("/:userId/ranking", (req, res) => {
-  const userId = Number(req.params.userId)
+router.use(requireTalusUser)
 
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
-  const ranking = calculateRanking(userId)
+router.get("/:userId/ranking", (_req, res) => {
+  const ranking = calculateRanking(talusUserId(res))
 
   res.json(ranking)
 })
 
-router.get("/:userId", (req, res) => {
-  const userId = Number(req.params.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
+router.get("/:userId", (_req, res) => {
   const preferences =
-    getUserPreferences(userId)
+    getUserPreferences(talusUserId(res))
 
   res.json(
     preferences.map((preference) => ({
@@ -58,19 +45,9 @@ router.get("/:userId", (req, res) => {
   )
 })
 
-router.get("/:userId/insights", (req, res) => {
-  const userId = Number(req.params.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
+router.get("/:userId/insights", (_req, res) => {
   const preferences =
-    getUserPreferences(userId)
+    getUserPreferences(talusUserId(res))
 
   const insights =
     generatePreferenceInsights(
@@ -80,19 +57,9 @@ router.get("/:userId/insights", (req, res) => {
   res.json(insights)
 })
 
-router.post("/:userId/recalculate", (req, res) => {
-  const userId = Number(req.params.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "Invalid user ID",
-    })
-
-    return
-  }
-
+router.post("/:userId/recalculate", (_req, res) => {
   const preferences =
-    updateUserPreferences(userId)
+    updateUserPreferences(talusUserId(res))
 
   res.json(preferences)
 })

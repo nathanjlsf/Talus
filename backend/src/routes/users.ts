@@ -3,11 +3,14 @@ import {
   findUserBySupabaseId,
   registerUser,
 } from "../services/userService.js"
+import { requireSupabaseUser } from "../auth/requireUser.js"
 
 const router = Router()
 
-router.get("/:supabaseUserId", (req, res) => {
-  const supabaseUserId = req.params.supabaseUserId
+router.use(requireSupabaseUser)
+
+router.get("/:supabaseUserId", (_req, res) => {
+  const supabaseUserId = String(res.locals.supabaseUserId ?? "")
 
   const user = findUserBySupabaseId(supabaseUserId)
 
@@ -27,12 +30,7 @@ router.post("/", (req, res) => {
     return
   }
 
-  const supabaseUserId = String(req.body.supabase_user_id ?? "").trim()
-
-  if (!supabaseUserId) {
-    res.status(400).json({ error: "Supabase user ID is required" })
-    return
-  }
+  const supabaseUserId = String(res.locals.supabaseUserId ?? "")
 
   const user = registerUser(name, supabaseUserId)
   res.status(201).json(user)

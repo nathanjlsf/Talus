@@ -13,7 +13,15 @@ import {
   getActivityById,
 } from "../repositories/activityRepository.js"
 
+import { activityOwnedByUser } from "../auth/activityAccess.js"
+import {
+  requireTalusUser,
+  talusUserId,
+} from "../auth/requireUser.js"
+
 const router = Router()
+
+router.use(requireTalusUser)
 
 router.get("/:activityId", (req, res) => {
   const activityId = Number(req.params.activityId)
@@ -21,6 +29,19 @@ router.get("/:activityId", (req, res) => {
   if (!Number.isInteger(activityId)) {
     res.status(400).json({
       error: "Invalid activity ID",
+    })
+
+    return
+  }
+
+  if (
+    !activityOwnedByUser(
+      getActivityById(activityId),
+      talusUserId(res)
+    )
+  ) {
+    res.status(404).json({
+      error: "Experience not found",
     })
 
     return
@@ -57,6 +78,19 @@ router.post("/", (req, res) => {
     res.status(400).json({
       error:
         "activity_id and overall_rating must be integers",
+    })
+
+    return
+  }
+
+  if (
+    !activityOwnedByUser(
+      getActivityById(activity_id),
+      talusUserId(res)
+    )
+  ) {
+    res.status(404).json({
+      error: "Activity not found",
     })
 
     return

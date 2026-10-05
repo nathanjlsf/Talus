@@ -17,6 +17,11 @@ import {
   parseBbox,
 } from "../geo/trailLines.js"
 
+import {
+  requireTalusUser,
+  talusUserId,
+} from "../auth/requireUser.js"
+
 const router = Router()
 
 router.get("/", (req, res) => {
@@ -60,16 +65,8 @@ router.get("/", (req, res) => {
   res.json(trails)
 })
 
-router.get("/map", (req, res) => {
-  const userId = Number(req.query.userId)
-
-  if (!Number.isInteger(userId)) {
-    res.status(400).json({
-      error: "userId is required",
-    })
-
-    return
-  }
+router.get("/map", requireTalusUser, (req, res) => {
+  const userId = talusUserId(res)
 
   const bbox = String(req.query.bbox ?? "").trim()
   const bounds = bbox ? parseBbox(bbox) : null

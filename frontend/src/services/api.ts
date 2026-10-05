@@ -1,7 +1,22 @@
-import { getCurrentUser } from "./supabase"
+import { getCurrentUser, supabase } from "./supabase"
 
 const API_BASE_URL = 
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api"
+
+async function apiFetch(url: string, init?: RequestInit) {
+  const headers = new Headers(init?.headers)
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`)
+  }
+
+  return fetch(url, {
+    ...init,
+    headers,
+  })
+}
 
 export interface Trail {
   id: number
@@ -125,7 +140,7 @@ export interface ComparisonPair {
 export async function getPreferenceInsights(
   userId: number
 ): Promise<PreferenceInsight[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/preferences/${userId}/insights`
   )
 
@@ -141,7 +156,7 @@ export async function getPreferenceInsights(
 export async function getPreferences(
   userId: number
 ): Promise<UserPreference[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/preferences/${userId}`
   )
 
@@ -155,7 +170,7 @@ export async function getPreferences(
 export async function recalculatePreferences(
   userId: number
 ): Promise<UserPreference[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/preferences/${userId}/recalculate`,
     {
       method: "POST",
@@ -209,7 +224,7 @@ export async function getMapTrails(
     params.set("bbox", bbox)
   }
 
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/trails/map?${params}`
   )
 
@@ -223,7 +238,7 @@ export async function getMapTrails(
 export async function getTrailGeometry(
   trailId: number
 ): Promise<TrailMapFeature> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/trails/${trailId}/geometry`
   )
 
@@ -237,7 +252,7 @@ export async function getTrailGeometry(
 export async function getRanking(
   userId: number
 ): Promise<RankedTrail[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/preferences/${userId}/ranking`
   )
 
@@ -253,7 +268,7 @@ export async function submitComparison(
   winnerTrailId: number,
   loserTrailId: number
 ): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/comparisons`,
     {
       method: "POST",
@@ -304,7 +319,7 @@ export async function getTrails(filters: {
 
   const query = params.toString()
 
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/trails${query ? `?${query}` : ""}`
   )
 
@@ -318,7 +333,7 @@ export async function getTrails(filters: {
 export async function getTrail(
   trailId: number
 ): Promise<Trail> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/trails/${trailId}`
   )
 
@@ -338,7 +353,7 @@ export async function createActivity(input: {
   elevation_gain_feet?: number
   duration_seconds?: number
 }): Promise<{ id: number }> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities`,
     {
       method: "POST",
@@ -359,7 +374,7 @@ export async function createActivity(input: {
 export async function getActivities(
   userId: number
 ): Promise<Activity[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/${userId}`
   )
 
@@ -427,7 +442,7 @@ export async function startRecording(
   userId: number,
   trailId: number
 ): Promise<{ id: number; started_at: string | null }> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/start`,
     {
       method: "POST",
@@ -452,7 +467,7 @@ export async function uploadActivityPoints(
   activityId: number,
   points: TrackPointInput[]
 ): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/${activityId}/points`,
     {
       method: "POST",
@@ -471,7 +486,7 @@ export async function uploadActivityPoints(
 export async function finishRecording(
   activityId: number
 ): Promise<HikeSummary> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/${activityId}/finish`,
     {
       method: "POST",
@@ -488,7 +503,7 @@ export async function finishRecording(
 export async function getHikeSummary(
   activityId: number
 ): Promise<HikeSummary> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/${activityId}/summary`
   )
 
@@ -502,7 +517,7 @@ export async function getHikeSummary(
 export async function getActivity(
   activityId: number
 ): Promise<Activity> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/activities/id/${activityId}`
   )
 
@@ -521,7 +536,7 @@ export async function createExperience(input: {
   solitude_rating?: number
   notes?: string
 }): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/experiences`,
     {
       method: "POST",
@@ -552,7 +567,7 @@ export async function getNextComparison(
 
   const query = params.toString()
 
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/comparisons/next/${userId}${
       query ? `?${query}` : ""
     }`
@@ -571,7 +586,7 @@ export async function createTalusUser(input: {
   name: string
   supabase_user_id: string
 }): Promise<{ id: number; name: string; supabase_user_id: string }> {
-  const response = await fetch(`${API_BASE_URL}/users`, {
+  const response = await apiFetch(`${API_BASE_URL}/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -594,7 +609,7 @@ export async function getTalusUser(
   supabase_user_id: string
   created_at: string
 }> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/users/${supabaseUserId}`,
   )
 
