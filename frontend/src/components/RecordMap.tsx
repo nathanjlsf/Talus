@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react"
 import {
   Map as MapLibreMap,
-  setWorkerUrl,
   type GeoJSONSource,
   type StyleSpecification,
 } from "maplibre-gl"
-import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"
 import "maplibre-gl/dist/maplibre-gl.css"
 
 import type { OfflineStyle } from "../services/offlinePack"
@@ -14,7 +12,6 @@ import {
   installOfflineProtocol,
 } from "../services/offlineProtocol"
 
-setWorkerUrl(maplibreWorkerUrl)
 installOfflineProtocol()
 
 const MAP_STYLE =

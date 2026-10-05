@@ -2,20 +2,16 @@ import { useEffect, useRef } from "react"
 import {
   Map as MapLibreMap,
   NavigationControl,
-  setWorkerUrl,
   type ExpressionSpecification,
   type GeoJSONSource,
   type MapLayerMouseEvent,
 } from "maplibre-gl"
-import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"
 import "maplibre-gl/dist/maplibre-gl.css"
 
 import type { TrailMapFeature } from "../services/api"
 
 const MAP_STYLE =
   "https://tiles.openfreemap.org/styles/liberty"
-
-setWorkerUrl(maplibreWorkerUrl)
 
 interface TrailMapProps {
   features: TrailMapFeature[]
