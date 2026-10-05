@@ -28,6 +28,7 @@ export interface RecordingSession {
   pausedAt: string | null
   points: SessionPoint[]
   pendingIndex: number
+  estimatedTimeMinutes?: number
 }
 
 interface Snapshot {
@@ -260,6 +261,7 @@ export async function beginRecording(input: {
   userId: number
   trailId: number
   trailName: string
+  estimatedTimeMinutes: number
 }) {
   const firstPoint = await readCurrentPosition()
   const activity = await startRecording(
@@ -283,6 +285,7 @@ export async function beginRecording(input: {
       },
     ],
     pendingIndex: 0,
+    estimatedTimeMinutes: input.estimatedTimeMinutes,
   })
 
   void flushTrack()

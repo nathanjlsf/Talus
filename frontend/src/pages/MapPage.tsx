@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 
 import TrailMap from "../components/TrailMap"
 import {
   getCurrentTalusUser,
   getMapTrails,
+  getTrail,
   type TrailMapFeature,
 } from "../services/api"
+import {
+  beginRecording,
+  getRecordingSnapshot,
+  subscribeRecording,
+} from "../services/recordingSession"
 import { trailPlace } from "../trailSummary"
 
 const DNA_MATCH = 65
@@ -23,6 +29,7 @@ function placeLabel(trail: TrailMapFeature) {
 }
 
 function MapPage() {
+  const navigate = useNavigate()
   const [features, setFeatures] = useState<
     TrailMapFeature[]
   >([])
@@ -48,6 +55,21 @@ function MapPage() {
   const [error, setError] = useState<string | null>(
     null
   )
+  const [starting, setStarting] = useState(false)
+  const [startError, setStartError] = useState<string | null>(
+    null
+  )
+  const [recordingName, setRecordingName] = useState<
+    string | null
+  >(() => getRecordingSnapshot().session?.trailName ?? null)
+
+  useEffect(() => {
+    return subscribeRecording(() => {
+      setRecordingName(
+        getRecordingSnapshot().session?.trailName ?? null
+      )
+    })
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -242,6 +264,41 @@ function MapPage() {
         feature.properties.id === selectedId
     ) ?? visible[0] ?? null
 
+  async function startHike() {
+    const current = getRecordingSnapshot().session
+
+    if (current) {
+      navigate("/record")
+      return
+    }
+
+    if (!selected) {
+      return
+    }
+
+    try {
+      setStarting(true)
+      setStartError(null)
+      const user = await getCurrentTalusUser()
+      const trail = await getTrail(selected.properties.id)
+      await beginRecording({
+        userId: user.id,
+        trailId: trail.id,
+        trailName: trail.name,
+        estimatedTimeMinutes: trail.estimated_time_minutes,
+      })
+      navigate("/record")
+    } catch (startFailure) {
+      setStartError(
+        startFailure instanceof Error
+          ? startFailure.message
+          : "Couldn't start recording"
+      )
+    } finally {
+      setStarting(false)
+    }
+  }
+
   return (
     <div className="relative h-full">
       <TrailMap
@@ -394,6 +451,30 @@ function MapPage() {
             )
           })}
         </div>
+
+        {selected && (
+          <div className="shrink-0 space-y-2 border-t border-[#d8d2c4] px-3 pt-3 pb-3">
+            {startError && (
+              <p className="text-sm leading-6 text-[#7a3b2e]">
+                {startError}
+              </p>
+            )}
+            <button
+              type="button"
+              disabled={starting}
+              onClick={() => {
+                void startHike()
+              }}
+              className="flex min-h-12 w-full items-center justify-center rounded-full bg-[#314936] px-4 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {recordingName
+                ? "Open recording"
+                : starting
+                  ? "Starting..."
+                  : "Start hike"}
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )

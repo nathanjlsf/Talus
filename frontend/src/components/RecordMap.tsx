@@ -3,11 +3,19 @@ import {
   Map as MapLibreMap,
   setWorkerUrl,
   type GeoJSONSource,
+  type StyleSpecification,
 } from "maplibre-gl"
 import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url"
 import "maplibre-gl/dist/maplibre-gl.css"
 
+import type { OfflineStyle } from "../services/offlinePack"
+import {
+  activateOfflineTrail,
+  installOfflineProtocol,
+} from "../services/offlineProtocol"
+
 setWorkerUrl(maplibreWorkerUrl)
+installOfflineProtocol()
 
 const MAP_STYLE =
   "https://tiles.openfreemap.org/styles/liberty"
@@ -16,12 +24,18 @@ interface RecordMapProps {
   trailPaths: number[][][]
   track: number[][]
   position: [number, number] | null
+  completed?: number[][]
+  offRoute?: boolean
+  mapStyle?: string | OfflineStyle
+  offlineTrailId?: number | null
+  bottomInset?: number
 }
 
 function collection(
   trailPaths: number[][][],
   track: number[][],
-  position: [number, number] | null
+  position: [number, number] | null,
+  completed: number[][]
 ) {
   return {
     type: "FeatureCollection" as const,
@@ -36,6 +50,18 @@ function collection(
             coordinates: path,
           },
         })),
+      ...(completed.length >= 2
+        ? [
+            {
+              type: "Feature" as const,
+              properties: { kind: "done" },
+              geometry: {
+                type: "LineString" as const,
+                coordinates: completed,
+              },
+            },
+          ]
+        : []),
       ...(track.length >= 2
         ? [
             {
@@ -112,11 +138,24 @@ function RecordMap({
   trailPaths,
   track,
   position,
+  completed = [],
+  offRoute = false,
+  mapStyle = MAP_STYLE,
+  offlineTrailId = null,
+  bottomInset = 0,
 }: RecordMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const fittedKey = useRef("")
-  const dataRef = useRef({ trailPaths, track, position })
+  const insetRef = useRef(bottomInset)
+  insetRef.current = bottomInset
+  const dataRef = useRef({
+    trailPaths,
+    track,
+    position,
+    completed,
+    offRoute,
+  })
 
   useEffect(() => {
     const container = containerRef.current
@@ -125,9 +164,12 @@ function RecordMap({
       return
     }
 
+    activateOfflineTrail(offlineTrailId)
+    fittedKey.current = ""
+
     const map = new MapLibreMap({
       container,
-      style: MAP_STYLE,
+      style: mapStyle as string | StyleSpecification,
       center: [-122.45, 37.8],
       zoom: 13,
       attributionControl: false,
@@ -141,7 +183,8 @@ function RecordMap({
         data: collection(
           current.trailPaths,
           current.track,
-          current.position
+          current.position,
+          current.completed
         ),
       })
 
@@ -157,6 +200,21 @@ function RecordMap({
         paint: {
           "line-color": "#c4b8a4",
           "line-width": 4,
+        },
+      })
+
+      map.addLayer({
+        id: "done-line",
+        type: "line",
+        source: "hike",
+        filter: ["==", ["get", "kind"], "done"],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#314936",
+          "line-width": 5,
         },
       })
 
@@ -194,18 +252,60 @@ function RecordMap({
     return () => {
       map.remove()
       mapRef.current = null
+      activateOfflineTrail(null)
     }
-  }, [])
+  }, [mapStyle, offlineTrailId])
 
   useEffect(() => {
-    dataRef.current = { trailPaths, track, position }
+    dataRef.current = {
+      trailPaths,
+      track,
+      position,
+      completed,
+      offRoute,
+    }
 
     const map = mapRef.current
     const source = map?.getSource("hike") as
       | GeoJSONSource
       | undefined
 
-    source?.setData(collection(trailPaths, track, position))
+    source?.setData(
+      collection(trailPaths, track, position, completed)
+    )
+
+    if (map?.getLayer("position")) {
+      map.setPaintProperty(
+        "position",
+        "circle-color",
+        offRoute ? "#7a3b2e" : "#314936"
+      )
+    }
+
+    if (map && position && map.isStyleLoaded()) {
+      const point = map.project(position)
+      const width = map.getContainer().clientWidth
+      const height = map.getContainer().clientHeight
+      const inset = insetRef.current
+      const hidden =
+        point.x < 24 ||
+        point.x > width - 24 ||
+        point.y < 48 ||
+        point.y > height - inset - 48
+
+      if (hidden) {
+        map.easeTo({
+          center: position,
+          padding: {
+            top: 48,
+            right: 32,
+            bottom: inset + 24,
+            left: 32,
+          },
+          duration: 400,
+        })
+      }
+    }
 
     const key =
       trailPaths.length > 0
@@ -218,12 +318,17 @@ function RecordMap({
     if (map && bounds && key && fittedKey.current !== key) {
       fittedKey.current = key
       map.fitBounds(bounds, {
-        padding: 32,
+        padding: {
+          top: 48,
+          right: 32,
+          bottom: insetRef.current + 24,
+          left: 32,
+        },
         maxZoom: 15,
         duration: 0,
       })
     }
-  }, [trailPaths, track, position])
+  }, [trailPaths, track, position, completed, offRoute])
 
   return <div ref={containerRef} className="h-full w-full" />
 }
