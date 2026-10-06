@@ -11,6 +11,10 @@ import {
   calculatePersonalizedScore,
 } from "../ranking/personalizedScoring.js"
 
+import {
+  clampTrailLimit,
+} from "../repositories/trailRepository.js"
+
 import type {
   RankingResult,
 } from "../ranking/types.js"
@@ -23,12 +27,15 @@ export function calculateRanking(
   userId: number,
   scope: TrailScope = {}
 ): RankingResult[] {
-  const trails = loadScopedTrails(userId, scope)
+  const trails = loadScopedTrails(userId, {
+    ...scope,
+    limit: null,
+  })
 
   const preferences =
     getUserPreferences(userId)
 
-  return trails
+  const ranked = trails
     .map((trail) => ({
       trail,
       score: calculatePersonalizedScore(
@@ -43,6 +50,13 @@ export function calculateRanking(
 
       return a.trail.id - b.trail.id
     })
+
+  const topMatches =
+    scope.limit == null
+      ? ranked
+      : ranked.slice(0, clampTrailLimit(scope.limit))
+
+  return topMatches
     .map((result, index) => ({
       rank: index + 1,
 

@@ -66,7 +66,7 @@ export function searchTrails(filters: {
   maxDistance?: number | undefined
   maxElevation?: number | undefined
   bounds?: Bounds | null | undefined
-  limit?: number | undefined
+  limit?: number | null | undefined
 }): Trail[] {
   const conditions: string[] = []
   const parameters: (string | number)[] = []
@@ -139,7 +139,14 @@ export function searchTrails(filters: {
     `
     : ""
 
-  parameters.push(clampTrailLimit(filters.limit))
+  const limitClause =
+    filters.limit === null
+      ? ""
+      : "LIMIT ?"
+
+  if (filters.limit !== null) {
+    parameters.push(clampTrailLimit(filters.limit))
+  }
 
   return db
     .prepare(
@@ -149,7 +156,7 @@ export function searchTrails(filters: {
       ${joinClause}
       ${whereClause}
       ORDER BY trails.name ASC
-      LIMIT ?
+      ${limitClause}
       `
     )
     .all(...parameters) as Trail[]

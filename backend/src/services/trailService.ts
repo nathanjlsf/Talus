@@ -17,7 +17,7 @@ export interface TrailScope {
   maxDistance?: number | undefined
   maxElevation?: number | undefined
   bounds?: Bounds | null | undefined
-  limit?: number | undefined
+  limit?: number | null | undefined
 }
 
 export function loadScopedTrails(
