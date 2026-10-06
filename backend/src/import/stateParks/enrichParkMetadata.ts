@@ -8,6 +8,8 @@ import {
   getTrailGeometryLines,
 } from "../../repositories/trailGeometryRepository.js"
 
+import { isDirectRun } from "../directRun.js"
+
 const SHAPEFILE_PATH =
   "data/state-parks/ParkBoundaries/ParkBoundaries.shp"
 
@@ -264,7 +266,7 @@ function getTotalTrailLength(
   return total
 }
 
-async function main() {
+async function enrichParkMetadata() {
   console.log(
     "Loading California State Parks boundaries..."
   )
@@ -369,15 +371,21 @@ async function main() {
   console.log(
     `  Total: ${trails.length}`
   )
-
-  db.close()
 }
 
-main().catch((error) => {
-  console.error(
-    "Park enrichment failed:",
-    error
-  )
+export { enrichParkMetadata }
 
-  process.exit(1)
-})
+if (isDirectRun(import.meta.url)) {
+  enrichParkMetadata()
+    .catch((error) => {
+      console.error(
+        "Park enrichment failed:",
+        error
+      )
+
+      process.exit(1)
+    })
+    .finally(() => {
+      db.close()
+    })
+}

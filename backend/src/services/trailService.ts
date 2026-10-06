@@ -1,14 +1,46 @@
 import {
   createTrail,
   deleteTrail,
-  getAllTrails,
+  getLatestTrailCounty,
   getTrailById,
   searchTrails,
   type Trail,
 } from "../repositories/trailRepository.js"
 
-export function listTrails(): Trail[] {
-  return getAllTrails()
+import type { Bounds } from "../geo/trailLines.js"
+
+export interface TrailScope {
+  search?: string | undefined
+  location?: string | undefined
+  county?: string | undefined
+  difficulty?: string | undefined
+  maxDistance?: number | undefined
+  maxElevation?: number | undefined
+  bounds?: Bounds | null | undefined
+  limit?: number | undefined
+}
+
+export function loadScopedTrails(
+  userId: number | null,
+  scope: TrailScope = {}
+): Trail[] {
+  const county = scope.bounds
+    ? undefined
+    : scope.county?.trim() ||
+      (userId
+        ? getLatestTrailCounty(userId) ?? undefined
+        : undefined)
+
+  return searchTrails({
+    ...scope,
+    county,
+  })
+}
+
+export function listTrails(
+  scope: TrailScope = {}
+): Trail[] {
+  return searchTrails(scope)
 }
 
 export function findTrail(id: number): Trail | undefined {
@@ -37,12 +69,6 @@ export function removeTrail(id: number): boolean {
   return deleteTrail(id)
 }
 
-export function searchTrailList(filters: {
-  search?: string | undefined
-  location?: string | undefined
-  difficulty?: string | undefined
-  maxDistance?: number | undefined
-  maxElevation?: number | undefined
-}): Trail[] {
+export function searchTrailList(filters: TrailScope): Trail[] {
   return searchTrails(filters)
 }

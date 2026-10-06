@@ -18,6 +18,10 @@ import {
 } from "../ranking/preferredRange.js"
 
 import {
+  parseBbox,
+} from "../geo/trailLines.js"
+
+import {
   requireTalusUser,
   talusUserId,
 } from "../auth/requireUser.js"
@@ -26,8 +30,27 @@ const router = Router()
 
 router.use(requireTalusUser)
 
-router.get("/:userId/ranking", (_req, res) => {
-  const ranking = calculateRanking(talusUserId(res))
+router.get("/:userId/ranking", (req, res) => {
+  const county = String(req.query.county ?? "").trim()
+  const limitValue = Number(req.query.limit)
+  const bbox = String(req.query.bbox ?? "").trim()
+  const bounds = bbox ? parseBbox(bbox) : null
+
+  if (bbox && !bounds) {
+    res.status(400).json({
+      error: "bbox must be west,south,east,north",
+    })
+
+    return
+  }
+
+  const ranking = calculateRanking(talusUserId(res), {
+    county: county || undefined,
+    bounds,
+    limit: Number.isInteger(limitValue)
+      ? limitValue
+      : undefined,
+  })
 
   res.json(ranking)
 })

@@ -20,6 +20,7 @@ export interface NormalizedTrail {
 const VALID_HIGHWAYS = new Set([
   "path",
   "foot",
+  "footway",
   "track",
 ])
 

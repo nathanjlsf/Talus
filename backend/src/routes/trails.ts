@@ -27,10 +27,12 @@ const router = Router()
 router.get("/", (req, res) => {
   const search = String(req.query.search ?? "").trim()
   const location = String(req.query.location ?? "").trim()
+  const county = String(req.query.county ?? "").trim()
   const difficulty = String(req.query.difficulty ?? "").trim()
 
   const maxDistanceValue = Number(req.query.maxDistance)
   const maxElevationValue = Number(req.query.maxElevation)
+  const limitValue = Number(req.query.limit)
 
   const maxDistance = Number.isFinite(maxDistanceValue)
     ? maxDistanceValue
@@ -40,27 +42,44 @@ router.get("/", (req, res) => {
     ? maxElevationValue
     : undefined
 
-  const hasFilters =
-    search ||
-    location ||
-    difficulty ||
-    maxDistance !== undefined ||
-    maxElevation !== undefined
+  const limit = Number.isInteger(limitValue)
+    ? limitValue
+    : undefined
 
-  if (hasFilters) {
-    const trails = searchTrailList({
-      search,
-      location,
-      difficulty,
-      maxDistance,
-      maxElevation,
+  const bbox = String(req.query.bbox ?? "").trim()
+  const bounds = bbox ? parseBbox(bbox) : null
+
+  if (bbox && !bounds) {
+    res.status(400).json({
+      error: "bbox must be west,south,east,north",
     })
 
-    res.json(trails)
     return
   }
 
-  const trails = listTrails()
+  const scope = {
+    search,
+    location,
+    county,
+    difficulty,
+    maxDistance,
+    maxElevation,
+    bounds,
+    limit,
+  }
+
+  const hasFilters =
+    search ||
+    location ||
+    county ||
+    difficulty ||
+    maxDistance !== undefined ||
+    maxElevation !== undefined ||
+    bounds
+
+  const trails = hasFilters
+    ? searchTrailList(scope)
+    : listTrails({ limit, bounds })
 
   res.json(trails)
 })

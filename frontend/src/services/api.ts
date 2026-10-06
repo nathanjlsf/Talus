@@ -250,10 +250,33 @@ export async function getTrailGeometry(
 }
 
 export async function getRanking(
-  userId: number
+  userId: number,
+  scope: {
+    county?: string
+    bbox?: string
+    limit?: number
+  } = {}
 ): Promise<RankedTrail[]> {
+  const params = new URLSearchParams()
+
+  if (scope.county) {
+    params.set("county", scope.county)
+  }
+
+  if (scope.bbox) {
+    params.set("bbox", scope.bbox)
+  }
+
+  if (scope.limit !== undefined) {
+    params.set("limit", String(scope.limit))
+  }
+
+  const query = params.toString()
+
   const response = await apiFetch(
-    `${API_BASE_URL}/preferences/${userId}/ranking`
+    `${API_BASE_URL}/preferences/${userId}/ranking${
+      query ? `?${query}` : ""
+    }`
   )
 
   if (!response.ok) {
@@ -294,6 +317,8 @@ export async function getTrails(filters: {
   difficulty?: string
   maxDistance?: number
   maxElevation?: number
+  county?: string
+  limit?: number
 } = {}): Promise<Trail[]> {
   const params = new URLSearchParams()
 
@@ -315,6 +340,14 @@ export async function getTrails(filters: {
 
   if (filters.maxElevation !== undefined) {
     params.set("maxElevation", String(filters.maxElevation))
+  }
+
+  if (filters.county) {
+    params.set("county", filters.county)
+  }
+
+  if (filters.limit !== undefined) {
+    params.set("limit", String(filters.limit))
   }
 
   const query = params.toString()

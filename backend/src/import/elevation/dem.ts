@@ -1,21 +1,92 @@
+import fs from "node:fs"
+import path from "node:path"
+import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
+
 import { fromFile } from "geotiff"
 
-const DEM_DIRECTORY = "data/dem"
+const DEM_DIRECTORY = path.resolve(
+  process.cwd(),
+  "data",
+  "dem"
+)
 
 const METERS_TO_FEET = 3.28084
 
-const DEM_TILES = new Set([
-  "n37w123",
-  "n37w122",
-  "n38w123",
-  "n38w122",
-  "n39w123",
-  "n39w122",
-  "n39w124",
-])
+const imageCache = new Map<string, Promise<any>>()
 
-const imageCache =
-  new Map<string, Promise<any>>()
+const unavailableTiles = new Set<string>()
+
+export class DemTileUnavailableError extends Error {
+  constructor(tile: string) {
+    super(`DEM tile unavailable: ${tile}`)
+    this.name = "DemTileUnavailableError"
+  }
+}
+
+export function tileNameForCoordinate(
+  latitude: number,
+  longitude: number
+): string {
+  const latitudeTile = Math.ceil(latitude)
+  const longitudeTile = Math.ceil(
+    Math.abs(longitude)
+  )
+
+  return `n${latitudeTile}w${longitudeTile}`
+}
+
+async function ensureDemTile(
+  tile: string
+): Promise<void> {
+  if (unavailableTiles.has(tile)) {
+    throw new DemTileUnavailableError(tile)
+  }
+
+  const filename = `USGS_13_${tile}.tif`
+  const destination = path.join(
+    DEM_DIRECTORY,
+    filename
+  )
+
+  if (
+    fs.existsSync(destination) &&
+    fs.statSync(destination).size > 0
+  ) {
+    return
+  }
+
+  fs.mkdirSync(DEM_DIRECTORY, { recursive: true })
+
+  const url =
+    "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/" +
+    `${tile}/${filename}`
+
+  const partial = `${destination}.partial`
+
+  console.log(`Downloading DEM tile ${filename}`)
+
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Talus/1.0 (hiking trail importer)",
+    },
+  })
+
+  if (!response.ok || !response.body) {
+    unavailableTiles.add(tile)
+    throw new DemTileUnavailableError(tile)
+  }
+
+  await pipeline(
+    Readable.fromWeb(
+      response.body as unknown as import("node:stream/web").ReadableStream
+    ),
+    fs.createWriteStream(partial)
+  )
+
+  fs.renameSync(partial, destination)
+}
 
 async function loadImage(
   tile: string
@@ -45,23 +116,10 @@ function getTileForCoordinate(
   latitude: number,
   longitude: number
 ): string {
-  const latitudeTile =
-    Math.ceil(latitude)
-
-  const longitudeTile =
-    Math.ceil(Math.abs(longitude))
-
-  const tile =
-    `n${latitudeTile}w${longitudeTile}`
-
-  if (!DEM_TILES.has(tile)) {
-    throw new Error(
-      `No DEM tile available for ` +
-      `${latitude}, ${longitude}`
-    )
-  }
-
-  return tile
+  return tileNameForCoordinate(
+    latitude,
+    longitude
+  )
 }
 
 export async function getElevationFromDem(
@@ -73,6 +131,8 @@ export async function getElevationFromDem(
       latitude,
       longitude
     )
+
+  await ensureDemTile(tile)
 
   const image =
     await getImage(tile)

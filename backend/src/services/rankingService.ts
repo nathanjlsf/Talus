@@ -1,6 +1,7 @@
 import {
-  getAllTrails,
-} from "../repositories/trailRepository.js"
+  loadScopedTrails,
+  type TrailScope,
+} from "../services/trailService.js"
 
 import {
   getUserPreferences,
@@ -19,9 +20,10 @@ import {
 } from "../ranking/recommendationExplanation.js"
 
 export function calculateRanking(
-  userId: number
+  userId: number,
+  scope: TrailScope = {}
 ): RankingResult[] {
-  const trails = getAllTrails()
+  const trails = loadScopedTrails(userId, scope)
 
   const preferences =
     getUserPreferences(userId)

@@ -10,6 +10,8 @@ import {
   getTrailGeometryLines,
 } from "../../repositories/trailGeometryRepository.js"
 
+import { isDirectRun } from "../directRun.js"
+
 const SHAPEFILE_PATH =
   "data/location/CaliforniaPlaces/tl_2025_06_place.shp"
 
@@ -234,7 +236,7 @@ function getTrailPlace(
   }
 }
 
-async function main() {
+async function enrichLocations() {
   console.log(
     "Loading California place boundaries..."
   )
@@ -324,15 +326,21 @@ async function main() {
   console.log(
     `  Total: ${trails.length}`
   )
-
-  db.close()
 }
 
-main().catch((error) => {
-  console.error(
-    "Location enrichment failed:",
-    error
-  )
+export { enrichLocations }
 
-  process.exit(1)
-})
+if (isDirectRun(import.meta.url)) {
+  enrichLocations()
+    .catch((error) => {
+      console.error(
+        "Location enrichment failed:",
+        error
+      )
+
+      process.exit(1)
+    })
+    .finally(() => {
+      db.close()
+    })
+}

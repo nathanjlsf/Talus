@@ -18,11 +18,14 @@ import {
 
 import {
   getElevationFromDem,
+  DemTileUnavailableError,
 } from "./dem.js"
 
 import {
   calculateElevationGain,
 } from "./elevationGain.js"
+
+import { isDirectRun } from "../directRun.js"
 
 interface TrailRow {
   id: number
@@ -165,6 +168,26 @@ async function enrichTrail(
 
     return elevationGain
   } catch (error) {
+    if (error instanceof DemTileUnavailableError) {
+      db.prepare(`
+        UPDATE trails
+        SET
+          elevation_status = 'pending',
+          elevation_attempts = MAX(elevation_attempts - 1, 0),
+          elevation_error = ?
+        WHERE id = ?
+      `).run(
+        error.message,
+        trail.id
+      )
+
+      console.log(
+        `  ${trail.name}: ${error.message}. Left pending.`
+      )
+
+      return 0
+    }
+
     const message =
       error instanceof Error
         ? error.message
@@ -250,11 +273,13 @@ const limit =
     ? limitArgument
     : TRAILS_PER_RUN
 
-enrichTrails(limit).catch((error) => {
-  console.error(
-    "Elevation enrichment failed:",
-    error
-  )
+if (isDirectRun(import.meta.url)) {
+  enrichTrails(limit).catch((error) => {
+    console.error(
+      "Elevation enrichment failed:",
+      error
+    )
 
-  process.exit(1)
-})
+    process.exit(1)
+  })
+}

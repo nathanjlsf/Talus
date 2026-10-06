@@ -46,10 +46,12 @@ function TrailDetail() {
         }
 
         const user = await getCurrentTalusUser()
+        const trailData = await getTrail(trailId)
 
-        const [trailData, ranking, geometry] = await Promise.all([
-          getTrail(trailId),
-          getRanking(user.id),
+        const [ranking, geometry] = await Promise.all([
+          getRanking(user.id, {
+            county: trailData.county ?? undefined,
+          }),
           getTrailGeometry(trailId).catch(() => null),
         ])
 

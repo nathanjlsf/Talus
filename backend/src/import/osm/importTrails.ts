@@ -86,7 +86,7 @@ function getGroupCenter(
   }
 }
 
-function cleanupStaleOsmTrails(
+export function cleanupStaleOsmTrails(
   staleTrails: Array<{
     id: number
   }>
@@ -170,6 +170,38 @@ function cleanupStaleOsmTrails(
   )
 
   return trailsToDelete.length
+}
+
+export function cleanupUnseenOsmTrails(
+  seenSourceIds: Set<string>
+): number {
+  if (seenSourceIds.size === 0) {
+    throw new Error(
+      "Refusing to delete OSM trails because the import saw none"
+    )
+  }
+
+  const existingOsmTrails = db
+    .prepare(
+      `
+      SELECT id, source_id
+      FROM trails
+      WHERE source = 'openstreetmap'
+        AND source_id IS NOT NULL
+      `
+    )
+    .all() as Array<{
+      id: number
+      source_id: string
+    }>
+
+  const staleTrails =
+    existingOsmTrails.filter(
+      (trail) =>
+        !seenSourceIds.has(trail.source_id)
+    )
+
+  return cleanupStaleOsmTrails(staleTrails)
 }
 
 export async function importBayAreaTrails() {

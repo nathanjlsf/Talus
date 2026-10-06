@@ -7,12 +7,20 @@ import {
 } from "../services/preferenceService.js"
 
 import {
-  getAllTrails,
+  getTrailsForUserSignals,
 } from "../repositories/trailRepository.js"
 
 import {
   selectComparisonPairs,
 } from "../ranking/comparisonSelector.js"
+
+import {
+  loadScopedTrails,
+} from "../services/trailService.js"
+
+import {
+  parseBbox,
+} from "../geo/trailLines.js"
 
 import {
   requireTalusUser,
@@ -25,8 +33,26 @@ router.use(requireTalusUser)
 
 router.get("/next/:userId", (req, res) => {
   const userId = talusUserId(res)
+  const county = String(req.query.county ?? "").trim()
+  const limitValue = Number(req.query.limit)
+  const bbox = String(req.query.bbox ?? "").trim()
+  const bounds = bbox ? parseBbox(bbox) : null
 
-  const trails = getAllTrails()
+  if (bbox && !bounds) {
+    res.status(400).json({
+      error: "bbox must be west,south,east,north",
+    })
+
+    return
+  }
+
+  const trails = loadScopedTrails(userId, {
+    county: county || undefined,
+    bounds,
+    limit: Number.isInteger(limitValue)
+      ? limitValue
+      : undefined,
+  })
 
   const comparisons =
     listComparisonsForUser(userId)
@@ -45,7 +71,7 @@ router.get("/next/:userId", (req, res) => {
   const preferences =
     calculateUserPreferences(
       userId,
-      trails
+      getTrailsForUserSignals(userId)
     )
 
   const seenPairs =

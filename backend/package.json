@@ -8,6 +8,8 @@
     "seed": "tsx src/db/seed.ts",
     "seed:user": "tsx src/db/seedUser.ts",
     "import:osm": "tsx src/import/osm/runImport.ts",
+    "import:california": "tsx src/import/osm/runCaliforniaImport.ts",
+    "enrich:california": "tsx src/import/runStatewideEnrichment.ts",
     "inspect:osm": "tsx src/import/osm/inspectOsmWays.ts",
     "test": "vitest",
     "build": "tsc",
@@ -24,6 +26,7 @@
     "dbf-reader": "^1.0.3",
     "express": "^5.2.1",
     "geotiff": "^3.0.5",
+    "osm-pbf-parser": "^2.3.0",
     "proj4": "^2.22.0",
     "shapefile": "^0.6.6"
   },

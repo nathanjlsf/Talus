@@ -6,7 +6,8 @@ import {
 import db from "../db/database.js"
 
 import {
-  getAllTrails,
+  getTrailsForUserSignals,
+  type Trail,
 } from "../repositories/trailRepository.js"
 
 import {
@@ -70,7 +71,7 @@ export function recordComparison(comparison: {
 
 export function calculateUserPreferences(
   userId: number,
-  trails = getAllTrails()
+  trails: Trail[]
 ): UserPreference[] {
   const comparisons =
     getComparisonsForUser(userId)
@@ -155,7 +156,7 @@ function recordedHikesForUser(
 export function calculateCombinedPreferences(
   userId: number
 ): UserPreference[] {
-  const trails = getAllTrails()
+  const trails = getTrailsForUserSignals(userId)
 
   const recordedHikes =
     recordedHikesForUser(userId)

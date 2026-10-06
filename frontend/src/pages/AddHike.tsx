@@ -5,6 +5,7 @@ import { Check, Mountain } from "lucide-react"
 import {
   createActivity,
   getCurrentTalusUser,
+  getTrail,
   getTrails,
   type Trail,
 } from "../services/api"
@@ -15,6 +16,7 @@ function AddHike() {
   const trailParam = searchParams.get("trail")
 
   const [trails, setTrails] = useState<Trail[]>([])
+  const [selectedTrail, setSelectedTrail] = useState<Trail | null>(null)
   const [trailId, setTrailId] = useState("")
   const [trailSearch, setTrailSearch] = useState("")
 
@@ -25,26 +27,20 @@ function AddHike() {
   const [savedActivityId, setSavedActivityId] = useState<number | null>(null)
 
   useEffect(() => {
-    async function loadTrails() {
+    async function loadTrailFromUrl() {
+      if (!trailParam) {
+        setLoading(false)
+        return
+      }
+
       try {
-        const data = await getTrails()
-        setTrails(data)
-
-        if (trailParam) {
-          const trailIdFromUrl = Number(trailParam)
-
-          const trailExists = data.some(
-            (trail) => trail.id === trailIdFromUrl
-          )
-
-          if (trailExists) {
-            setTrailId(trailParam)
-          }
-        }
-      } catch (error) {
+        const trail = await getTrail(Number(trailParam))
+        setSelectedTrail(trail)
+        setTrailId(String(trail.id))
+      } catch (loadError) {
         setError(
-          error instanceof Error
-            ? error.message
+          loadError instanceof Error
+            ? loadError.message
             : "Failed to load trails"
         )
       } finally {
@@ -52,12 +48,29 @@ function AddHike() {
       }
     }
 
-    loadTrails()
+    loadTrailFromUrl()
   }, [trailParam])
 
-  const selectedTrail = trails.find(
-    (trail) => trail.id === Number(trailId)
-  )
+  useEffect(() => {
+    const query = trailSearch.trim()
+
+    if (query.length < 2 || selectedTrail) {
+      return
+    }
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const data = await getTrails({ search: query, limit: 50 })
+        setTrails(data)
+      } catch {
+        setTrails([])
+      }
+    }, 300)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [trailSearch, selectedTrail])
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
@@ -87,6 +100,7 @@ function AddHike() {
       setSaved(true)
       setSavedActivityId(activity.id)
       setTrailId("")
+      setSelectedTrail(null)
       setTrailSearch("")
     } catch (error) {
       setError(
@@ -154,7 +168,16 @@ function AddHike() {
               <select
                 id="trail"
                 value={trailId}
-                onChange={(event) => setTrailId(event.target.value)}
+                onChange={(event) => {
+                  const nextTrailId = event.target.value
+                  setTrailId(nextTrailId)
+                  setSelectedTrail(
+                    trails.find(
+                      (trail) =>
+                        trail.id === Number(nextTrailId)
+                    ) ?? null
+                  )
+                }}
                 className="w-full rounded-xl border border-[#c9c4b7] bg-[#f3efe4] px-4 py-3 text-[#26352a] outline-none transition focus:border-[#314936]"
               >
                 <option value="">
@@ -163,20 +186,7 @@ function AddHike() {
                     : "Select a trail..."}
                 </option>
 
-                {trails
-                  .filter((trail) => {
-                    const query = trailSearch.trim().toLowerCase()
-
-                    if (!query) {
-                      return true
-                    }
-
-                    return (
-                      trail.name.toLowerCase().includes(query) ||
-                      trail.location?.toLowerCase().includes(query)
-                    )
-                  })
-                  .map((trail) => (
+                {trails.map((trail) => (
                     <option
                       key={trail.id}
                       value={trail.id}
