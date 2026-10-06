@@ -2,6 +2,9 @@
 node_modules
 dist
 data/dem
+data/california-latest.osm.pbf
+data/california-import.db
+data/*.geojson
 data/ebrpd
 data/location
 data/marin

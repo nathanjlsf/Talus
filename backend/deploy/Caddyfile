@@ -1,0 +1,14 @@
+{
+	email nathan.lee5459@gmail.com
+	default_sni {$TALUS_HOST}
+}
+
+{$TALUS_HOST} {
+	tls {
+		issuer acme {
+			profile shortlived
+			disable_tlsalpn_challenge
+		}
+	}
+	reverse_proxy api:3000
+}

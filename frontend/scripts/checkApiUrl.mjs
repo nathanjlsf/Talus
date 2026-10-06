@@ -10,7 +10,7 @@ if (!file) {
 }
 
 const text = fs.readFileSync(`dist/assets/${file}`, "utf8")
-const expected = "https://talus-hiking.fly.dev/api"
+const expected = "https://192.9.232.13/api"
 
 if (!text.includes(expected)) {
   console.error(`Phone bundle is missing ${expected}`)
