@@ -1,5 +1,4 @@
 import {
-  Circle,
   Compass,
   House,
   Map as MapIcon,
@@ -25,21 +24,17 @@ export const navItems: NavItem[] = [
     label: "Explore",
     to: "/trails",
     icon: Compass,
-    matches: (pathname) => pathname.startsWith("/trails"),
+    matches: (pathname) =>
+      pathname.startsWith("/trails") ||
+      pathname.startsWith("/add-hike"),
   },
   {
     label: "Map",
     to: "/map",
     icon: MapIcon,
-    matches: (pathname) => pathname.startsWith("/map"),
-  },
-  {
-    label: "Record",
-    to: "/record",
-    icon: Circle,
     matches: (pathname) =>
-      pathname.startsWith("/record") ||
-      pathname.startsWith("/add-hike"),
+      pathname.startsWith("/map") ||
+      pathname.startsWith("/record"),
   },
   {
     label: "Profile",

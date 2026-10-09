@@ -6,6 +6,7 @@ import {
   getActivities,
   getCurrentTalusUser,
   getPreferenceInsights,
+  CATALOG_BBOX,
   getRanking,
   type Activity,
   type PreferenceInsight,
@@ -45,7 +46,10 @@ function Home() {
 
       try {
         const [rankingData, insightData, activityData] = await Promise.all([
-          getRanking(user.id),
+          getRanking(user.id, {
+            bbox: CATALOG_BBOX,
+            limit: 1,
+          }),
           getPreferenceInsights(user.id),
           getActivities(user.id),
         ])

@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from "react"
-import { Link, useNavigate } from "react-router"
-import { Pause, Play, Plus, Square } from "lucide-react"
+import { Navigate, useNavigate } from "react-router"
+import { Pause, Play, Square } from "lucide-react"
 
 import RecordMap from "../components/RecordMap"
 import {
-  getCurrentTalusUser,
   getTrailGeometry,
-  getTrails,
   type MomentMark,
-  type Trail,
 } from "../services/api"
 import {
   daylightNote,
@@ -16,16 +13,12 @@ import {
   guideOnTrail,
   movingEffort,
 } from "../services/hikeGuidance"
-import { isNativeApp } from "../services/location"
 import {
-  deleteOfflinePack,
-  downloadOfflinePack,
   getOfflinePack,
   type OfflineStyle,
 } from "../services/offlinePack"
 import {
   attachWatcher,
-  beginRecording,
   elapsedMs,
   finishHike,
   getRecordingSnapshot,
@@ -90,19 +83,10 @@ function Record() {
   const [locationError, setLocationError] = useState<string | null>(
     () => getRecordingSnapshot().locationError
   )
-  const [query, setQuery] = useState("")
-  const [trails, setTrails] = useState<Trail[]>([])
-  const [selected, setSelected] = useState<Trail | null>(null)
   const [trailPaths, setTrailPaths] = useState<number[][][]>([])
   const [now, setNow] = useState(() => Date.now())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [previewPaths, setPreviewPaths] = useState<number[][][]>([])
-  const [routeReady, setRouteReady] = useState(false)
-  const [packReady, setPackReady] = useState<boolean | null>(null)
-  const [downloadProgress, setDownloadProgress] = useState<
-    number | null
-  >(null)
   const [mapStyle, setMapStyle] = useState<
     string | OfflineStyle | null
   >(null)
@@ -110,7 +94,6 @@ function Record() {
     number | null
   >(null)
   const offRouteRef = useRef(false)
-  const downloadAbort = useRef<AbortController | null>(null)
   const [sheetStop, setSheetStop] = useState<SheetStop>("peek")
   const [sheetHeight, setSheetHeight] = useState<number | null>(
     null
@@ -141,73 +124,7 @@ function Record() {
     return () => window.clearInterval(timer)
   }, [])
 
-  useEffect(() => {
-    if (session) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      void getTrails({ search: query })
-        .then(setTrails)
-        .catch(() => {
-          setTrails([])
-        })
-    }, 250)
-
-    return () => window.clearTimeout(timer)
-  }, [query, session])
-
   const trailId = session?.trailId ?? null
-  const selectedId = selected?.id ?? null
-
-  useEffect(() => {
-    if (selectedId === null) {
-      setPreviewPaths([])
-      setRouteReady(false)
-      setPackReady(null)
-      return
-    }
-
-    let cancelled = false
-    setRouteReady(false)
-    setPackReady(null)
-
-    void getTrailGeometry(selectedId)
-      .then((feature) => {
-        if (!cancelled) {
-          setPreviewPaths(feature.geometry.coordinates)
-          setRouteReady(true)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPreviewPaths([])
-          setRouteReady(true)
-        }
-      })
-
-    void getOfflinePack(selectedId)
-      .then((pack) => {
-        if (!cancelled) {
-          setPackReady(pack !== null)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPackReady(false)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [selectedId])
-
-  useEffect(() => {
-    return () => {
-      downloadAbort.current?.abort()
-    }
-  }, [selectedId])
 
   useEffect(() => {
     if (trailId === null) {
@@ -265,87 +182,6 @@ function Record() {
       cancelled = true
     }
   }, [trailId])
-
-  async function saveOffline() {
-    if (!selected || previewPaths.length === 0 || downloadProgress !== null) {
-      return
-    }
-
-    const requestedId = selected.id
-    const controller = new AbortController()
-    downloadAbort.current?.abort()
-    downloadAbort.current = controller
-
-    try {
-      setError(null)
-      setDownloadProgress(0)
-      await downloadOfflinePack({
-        trailId: requestedId,
-        paths: previewPaths,
-        signal: controller.signal,
-        onProgress: (done, total) => {
-          if (controller.signal.aborted) {
-            return
-          }
-
-          setDownloadProgress(
-            total === 0 ? 1 : Math.min(1, done / total)
-          )
-        },
-      })
-
-      if (!controller.signal.aborted) {
-        setPackReady(true)
-      }
-    } catch (downloadError) {
-      if (controller.signal.aborted) {
-        return
-      }
-
-      setError(
-        downloadError instanceof Error
-          ? downloadError.message
-          : "Couldn't save the map on this phone"
-      )
-    } finally {
-      setDownloadProgress(null)
-    }
-  }
-
-  async function removeOffline() {
-    if (!selected) {
-      return
-    }
-
-    await deleteOfflinePack(selected.id)
-    setPackReady(false)
-  }
-
-  async function start() {
-    if (!selected) {
-      return
-    }
-
-    try {
-      setBusy(true)
-      setError(null)
-      const user = await getCurrentTalusUser()
-      await beginRecording({
-        userId: user.id,
-        trailId: selected.id,
-        trailName: selected.name,
-        estimatedTimeMinutes: selected.estimated_time_minutes,
-      })
-    } catch (startError) {
-      setError(
-        startError instanceof Error
-          ? startError.message
-          : "Couldn't start recording"
-      )
-    } finally {
-      setBusy(false)
-    }
-  }
 
   function expandedSheetHeight() {
     const parent = sheetRef.current?.parentElement
@@ -469,136 +305,9 @@ function Record() {
   }
 
   if (!session) {
-    return (
-      <section className="mx-auto flex h-full min-h-0 max-w-2xl flex-col overflow-y-auto px-4 pt-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-[#687565]">
-          Record
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-          Track a hike
-        </h1>
-        <p className="mt-3 leading-7 text-[#687565]">
-          Choose the trail, then start. Talus keeps the track on
-          this phone and uploads it in batches.
-          {isNativeApp()
-            ? " Recording continues with the screen locked."
-            : " In the browser, keep this tab open."}
-        </p>
-
-        <label className="mt-6 block text-sm font-medium" htmlFor="trail-search">
-          Trail
-        </label>
-        <input
-          id="trail-search"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value)
-            setSelected(null)
-          }}
-          placeholder="Search trails"
-          className="mt-2 min-h-12 w-full rounded-2xl border border-[#d8d2c4] bg-white px-4"
-        />
-
-        <div className="mt-4 space-y-2">
-          {trails.slice(0, 8).map((trail) => {
-            const active = selected?.id === trail.id
-
-            return (
-              <button
-                key={trail.id}
-                type="button"
-                onClick={() => setSelected(trail)}
-                className={`min-h-12 w-full rounded-2xl border px-4 py-3 text-left ${
-                  active
-                    ? "border-[#314936] bg-[#314936] text-white"
-                    : "border-[#d8d2c4] bg-[#ebe6da]"
-                }`}
-              >
-                <span className="block font-medium">{trail.name}</span>
-                <span
-                  className={`mt-1 block text-sm ${
-                    active ? "text-white/80" : "text-[#687565]"
-                  }`}
-                >
-                  {trail.distance_miles} mi
-                  {trail.location ? ` · ${trail.location}` : ""}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        {selected && (
-          <div className="mt-4 rounded-2xl border border-[#d8d2c4] bg-[#ebe6da] px-4 py-3">
-            <p className="text-sm leading-6 text-[#526052]">
-              Save the map and the route on this phone before
-              you lose signal.
-            </p>
-            {!routeReady || packReady === null ? (
-              <p className="mt-2 text-sm text-[#687565]">
-                Checking this trail...
-              </p>
-            ) : previewPaths.length === 0 ? (
-              <p className="mt-2 text-sm text-[#687565]">
-                This trail has no route to download.
-              </p>
-            ) : packReady ? (
-              <>
-                <p className="mt-2 text-sm font-medium text-[#314936]">
-                  Map saved on this phone.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void removeOffline()
-                  }}
-                  className="mt-2 min-h-11 text-sm font-medium text-[#687565]"
-                >
-                  Remove download
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                disabled={downloadProgress !== null}
-                onClick={() => {
-                  void saveOffline()
-                }}
-                className="mt-3 flex min-h-12 w-full items-center justify-center rounded-full border border-[#314936] px-4 font-medium text-[#314936] disabled:opacity-60"
-              >
-                {downloadProgress === null
-                  ? "Download for offline"
-                  : `Saving map ${Math.round(downloadProgress * 100)}%`}
-              </button>
-            )}
-          </div>
-        )}
-
-        {error && (
-          <p className="mt-4 text-sm text-[#7a3b2e]">{error}</p>
-        )}
-
-        <button
-          type="button"
-          disabled={!selected || busy}
-          onClick={() => {
-            void start()
-          }}
-          className="mt-6 flex min-h-12 w-full items-center justify-center rounded-full bg-[#314936] px-6 font-medium text-white disabled:opacity-40"
-        >
-          {busy ? "Starting..." : "Start hike"}
-        </button>
-
-        <Link
-          to="/add-hike"
-          className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-[#d8d2c4] px-6 font-medium"
-        >
-          <Plus size={18} />
-          Log a past hike
-        </Link>
-      </section>
-    )
+    return <Navigate to="/map" replace />
   }
+
 
   const fixes = session.points.filter(
     (point) => point.moment === null

@@ -251,6 +251,9 @@ export async function getTrailGeometry(
   return response.json()
 }
 
+// A bbox keeps ranking from narrowing to the latest hike county.
+export const CATALOG_BBOX = "-180,-90,180,90"
+
 export async function getRanking(
   userId: number,
   scope: {

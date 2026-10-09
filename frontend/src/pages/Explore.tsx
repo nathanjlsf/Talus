@@ -6,6 +6,7 @@ import TrailCard from "../components/TrailCard"
 import TrailResultCard from "../components/TrailResultCard"
 import {
   getCurrentTalusUser,
+  CATALOG_BBOX,
   getRanking,
   getTrailGeometry,
   getTrails,
@@ -270,7 +271,7 @@ function Explore() {
       try {
         const user = await getCurrentTalusUser()
         const results = await getRanking(user.id, {
-          bbox: "-180,-90,180,90",
+          bbox: CATALOG_BBOX,
           limit: 500,
         })
         setRanking(results)
