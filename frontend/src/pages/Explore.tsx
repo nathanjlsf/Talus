@@ -7,9 +7,11 @@ import TrailResultCard from "../components/TrailResultCard"
 import {
   getCurrentTalusUser,
   getRanking,
+  getTrailGeometry,
   getTrails,
   type RankedTrail,
   type Trail,
+  type TrailMapFeature,
 } from "../services/api"
 
 const selectClassName =
@@ -128,6 +130,114 @@ function ShowMoreButton({
   )
 }
 
+async function scoreTrails(
+  userId: number,
+  trails: Trail[]
+): Promise<RankedTrail[]> {
+  if (trails.length === 0) {
+    return []
+  }
+
+  const wanted = new Set(trails.map((trail) => trail.id))
+  const ranked = await getRanking(userId, {
+    ids: trails.map((trail) => trail.id),
+  })
+  const matched = ranked.filter((item) =>
+    wanted.has(item.trail.id)
+  )
+  const matchedIds = new Set(
+    matched.map((item) => item.trail.id)
+  )
+  const missing = trails.filter(
+    (trail) => !matchedIds.has(trail.id)
+  )
+
+  if (missing.length === 0) {
+    return matched
+  }
+
+  const extras: RankedTrail[] = []
+  const queue = [...missing]
+  const workers = Array.from(
+    { length: Math.min(4, queue.length) },
+    async () => {
+      while (queue.length > 0) {
+        const trail = queue.shift()
+
+        if (!trail) {
+          return
+        }
+
+        const scored = await scoreTrailByBounds(
+          userId,
+          trail.id
+        )
+
+        if (scored) {
+          extras.push(scored)
+        }
+      }
+    }
+  )
+
+  await Promise.all(workers)
+  return [...matched, ...extras]
+}
+
+async function scoreTrailByBounds(
+  userId: number,
+  trailId: number
+): Promise<RankedTrail | null> {
+  try {
+    const geometry = await getTrailGeometry(trailId)
+    const [west, south, east, north] = routeBounds(geometry)
+
+    if (
+      !Number.isFinite(west) ||
+      !Number.isFinite(south) ||
+      !Number.isFinite(east) ||
+      !Number.isFinite(north)
+    ) {
+      return null
+    }
+
+    const ranking = await getRanking(userId, {
+      bbox: [west, south, east, north].join(","),
+    })
+
+    return (
+      ranking.find((item) => item.trail.id === trailId) ??
+      null
+    )
+  } catch {
+    return null
+  }
+}
+
+function routeBounds(
+  feature: TrailMapFeature
+): [number, number, number, number] {
+  let west = Infinity
+  let south = Infinity
+  let east = -Infinity
+  let north = -Infinity
+
+  for (const line of feature.geometry.coordinates) {
+    for (const [longitude, latitude] of line) {
+      if (longitude === undefined || latitude === undefined) {
+        continue
+      }
+
+      west = Math.min(west, longitude)
+      east = Math.max(east, longitude)
+      south = Math.min(south, latitude)
+      north = Math.max(north, latitude)
+    }
+  }
+
+  return [west, south, east, north]
+}
+
 function Explore() {
   const navigate = useNavigate()
 
@@ -159,7 +269,10 @@ function Explore() {
     async function loadRanking() {
       try {
         const user = await getCurrentTalusUser()
-        const results = await getRanking(user.id)
+        const results = await getRanking(user.id, {
+          bbox: "-180,-90,180,90",
+          limit: 500,
+        })
         setRanking(results)
       } catch (error) {
         setError(
@@ -207,11 +320,7 @@ function Explore() {
         })
 
         const user = await getCurrentTalusUser()
-        const ranked = data.length
-          ? await getRanking(user.id, {
-              ids: data.map((trail) => trail.id),
-            })
-          : []
+        const ranked = await scoreTrails(user.id, data)
 
         setSearchResults(data)
         setSearchRanking(ranked)

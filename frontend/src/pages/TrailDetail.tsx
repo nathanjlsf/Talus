@@ -47,21 +47,46 @@ function TrailDetail() {
 
         const user = await getCurrentTalusUser()
         const trailData = await getTrail(trailId)
+        const geometry = await getTrailGeometry(
+          trailId
+        ).catch(() => null)
 
-        const [ranking, geometry] = await Promise.all([
-          getRanking(user.id, {
-            ids: [trailId],
-          }),
-          getTrailGeometry(trailId).catch(() => null),
-        ])
+        let ranking = await getRanking(user.id, {
+          ids: [trailId],
+        })
 
-        setTrail(trailData)
-        setRoute(geometry)
-
-        const rankedTrail = ranking.find(
+        let rankedTrail = ranking.find(
           (item) => item.trail.id === trailId
         )
 
+        if (!rankedTrail && geometry) {
+          try {
+            const [west, south, east, north] =
+              routeBounds(geometry)
+
+            if (
+              Number.isFinite(west) &&
+              Number.isFinite(south) &&
+              Number.isFinite(east) &&
+              Number.isFinite(north)
+            ) {
+              ranking = await getRanking(user.id, {
+                bbox: [west, south, east, north].join(
+                  ","
+                ),
+              })
+
+              rankedTrail = ranking.find(
+                (item) => item.trail.id === trailId
+              )
+            }
+          } catch {
+            rankedTrail = undefined
+          }
+        }
+
+        setTrail(trailData)
+        setRoute(geometry)
         setRecommendation(rankedTrail ?? null)
       } catch (error) {
         setError(
@@ -236,6 +261,12 @@ function TrailDetail() {
         </div>
       )}
 
+      {[
+        { label: "Scenic", value: trail.scenic_score },
+        { label: "Forest", value: trail.forest_score },
+        { label: "Water", value: trail.water_score },
+        { label: "Coastal", value: trail.coastal_score },
+      ].some((attribute) => attribute.value !== null) && (
       <div className="mt-8 max-w-3xl md:mt-10">
         <h2 className="text-xl font-semibold md:text-2xl">
           Trail character
@@ -280,6 +311,7 @@ function TrailDetail() {
             })}
         </div>
       </div>
+      )}
 
       {recommendation && (
         <div className="mt-8 max-w-3xl rounded-3xl border border-[#d8d2c4] bg-[#ebe6da] p-5 md:mt-10 md:p-7">
