@@ -40,6 +40,33 @@ export async function readCurrentPosition(): Promise<LivePoint> {
   }
 }
 
+export async function readApproximatePosition(): Promise<LivePoint | null> {
+  if (!navigator.geolocation) {
+    return null
+  }
+
+  try {
+    const position = await new Promise<GeolocationPosition>(
+      (resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 5 * 60 * 1000,
+        })
+      }
+    )
+
+    return {
+      recorded_at: new Date(position.timestamp).toISOString(),
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function watchHikePosition(
   onPoint: (point: LivePoint) => void,
   onError: (message: string) => void

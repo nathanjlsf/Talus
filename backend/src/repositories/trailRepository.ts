@@ -215,6 +215,36 @@ export function getTrailsForUserSignals(
     .all(userId, userId, userId) as Trail[]
 }
 
+export function getTrailsByIds(
+  ids: number[]
+): Trail[] {
+  const unique = [
+    ...new Set(
+      ids.filter(
+        (id) => Number.isInteger(id) && id > 0
+      )
+    ),
+  ].slice(0, MAX_TRAIL_LIMIT)
+
+  if (unique.length === 0) {
+    return []
+  }
+
+  const placeholders = unique
+    .map(() => "?")
+    .join(", ")
+
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM trails
+      WHERE id IN (${placeholders})
+      `
+    )
+    .all(...unique) as Trail[]
+}
+
 export function getTrailById(id: number): Trail | undefined {
   return db
     .prepare(

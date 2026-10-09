@@ -169,6 +169,21 @@ export function getActivitiesForUser(
   }))
 }
 
+export function deleteActivityById(
+  activityId: number
+): boolean {
+  const result = db
+    .prepare(
+      `
+      DELETE FROM activities
+      WHERE id = ?
+      `
+    )
+    .run(activityId)
+
+  return result.changes > 0
+}
+
 export function getActivityById(
   activityId: number
 ): Activity | undefined {

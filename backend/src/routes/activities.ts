@@ -4,7 +4,10 @@ import {
   findActivityById,
   listActivitiesForUser,
   recordActivity,
+  removeActivity,
 } from "../services/activityService.js"
+
+import { updateUserPreferences } from "../services/preferenceService.js"
 
 import {
   appendActivityPoints,
@@ -136,6 +139,49 @@ router.get("/id/:activityId", (req, res) => {
   }
 
   res.json(activity)
+})
+
+router.delete("/:activityId", (req, res) => {
+  const activityId = Number(req.params.activityId)
+
+  if (!Number.isInteger(activityId)) {
+    res.status(400).json({
+      error: "Invalid activity ID",
+    })
+
+    return
+  }
+
+  const activity = ownedActivity(activityId, res)
+
+  if (!activity) {
+    return
+  }
+
+  try {
+    removeActivity(activityId)
+  } catch (error) {
+    res.status(400).json({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unable to delete hike",
+    })
+
+    return
+  }
+
+  try {
+    updateUserPreferences(activity.user_id)
+  } catch (error) {
+    console.error(
+      error instanceof Error
+        ? error.message
+        : "Unable to refresh preferences"
+    )
+  }
+
+  res.status(204).send()
 })
 
 router.get("/:userId", (_req, res) => {

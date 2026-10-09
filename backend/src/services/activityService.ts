@@ -1,5 +1,6 @@
 import {
   createActivity,
+  deleteActivityById,
   getActivitiesForUser,
   getActivityWithTrailById,
 } from "../repositories/activityRepository.js"
@@ -33,6 +34,16 @@ export function listActivitiesForUser(
   userId: number
 ): ActivityWithTrail[] {
   return getActivitiesForUser(userId)
+}
+
+export function removeActivity(
+  activityId: number
+): boolean {
+  if (activityId <= 0) {
+    throw new Error("Invalid activity ID")
+  }
+
+  return deleteActivityById(activityId)
 }
 
 export function findActivityById(

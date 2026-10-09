@@ -13,11 +13,52 @@ import {
   getRecordingSnapshot,
   subscribeRecording,
 } from "../services/recordingSession"
+import { readApproximatePosition } from "../services/location"
 import { trailPlace } from "../trailSummary"
 
 const DNA_MATCH = 65
 const HANDLE_HEIGHT = 56
 const PEEK_SHEET = 208
+const LOCATION_HALF_SPAN = 0.04
+
+function boundsAround(
+  latitude: number,
+  longitude: number
+): [number, number, number, number] {
+  return [
+    longitude - LOCATION_HALF_SPAN,
+    latitude - LOCATION_HALF_SPAN,
+    longitude + LOCATION_HALF_SPAN,
+    latitude + LOCATION_HALF_SPAN,
+  ]
+}
+
+function nearestTrailId(
+  features: TrailMapFeature[],
+  latitude: number,
+  longitude: number
+) {
+  let bestId: number | null = null
+  let bestDistance = Infinity
+  const lngScale = Math.cos((latitude * Math.PI) / 180)
+
+  for (const feature of features) {
+    for (const line of feature.geometry.coordinates) {
+      for (const [lng, lat] of line) {
+        const dLat = lat - latitude
+        const dLng = (lng - longitude) * lngScale
+        const distance = dLat * dLat + dLng * dLng
+
+        if (distance < bestDistance) {
+          bestDistance = distance
+          bestId = feature.properties.id
+        }
+      }
+    }
+  }
+
+  return bestId
+}
 
 type SheetStop = "closed" | "peek" | "open"
 
@@ -38,6 +79,9 @@ function MapPage() {
   >(null)
   const [selectedId, setSelectedId] = useState<
     number | null
+  >(null)
+  const [location, setLocation] = useState<
+    [number, number] | null
   >(null)
   const [fitsDna, setFitsDna] = useState(false)
   const [sheetStop, setSheetStop] =
@@ -77,6 +121,42 @@ function MapPage() {
     async function loadMap() {
       try {
         const user = await getCurrentTalusUser()
+        const position = await readApproximatePosition()
+
+        if (ignore) {
+          return
+        }
+
+        if (position) {
+          const view = boundsAround(
+            position.latitude,
+            position.longitude
+          )
+          const map = await getMapTrails(
+            user.id,
+            view.join(",")
+          )
+
+          if (ignore) {
+            return
+          }
+
+          setLocation([
+            position.longitude,
+            position.latitude,
+          ])
+          setFeatures(map.features)
+          setBounds(view)
+          setSelectedId(
+            nearestTrailId(
+              map.features,
+              position.latitude,
+              position.longitude
+            )
+          )
+          return
+        }
+
         const map = await getMapTrails(user.id)
 
         if (ignore) {
@@ -305,6 +385,17 @@ function MapPage() {
         features={visible}
         selectedId={selected?.properties.id ?? null}
         bounds={bounds}
+        location={location}
+        fitPadding={
+          isDesktop
+            ? { top: 64, right: 420, bottom: 48, left: 48 }
+            : {
+                top: 72,
+                right: 24,
+                bottom: PEEK_SHEET + 88,
+                left: 24,
+              }
+        }
         enableMoves={!loading}
         onSelect={(trailId) => {
           setSelectedId(trailId)

@@ -139,6 +139,7 @@ function Explore() {
 
   const [search, setSearch] = useState("")
   const [searchResults, setSearchResults] = useState<Trail[]>([])
+  const [searchRanking, setSearchRanking] = useState<RankedTrail[]>([])
   const [searching, setSearching] = useState(false)
 
   const [difficulty, setDifficulty] = useState("")
@@ -186,6 +187,7 @@ function Explore() {
 
       if (!hasFilters) {
         setSearchResults([])
+        setSearchRanking([])
         setSearching(false)
         return
       }
@@ -204,9 +206,18 @@ function Explore() {
             : undefined,
         })
 
+        const user = await getCurrentTalusUser()
+        const ranked = data.length
+          ? await getRanking(user.id, {
+              ids: data.map((trail) => trail.id),
+            })
+          : []
+
         setSearchResults(data)
+        setSearchRanking(ranked)
       } catch {
         setSearchResults([])
+        setSearchRanking([])
       } finally {
         setSearching(false)
       }
@@ -227,10 +238,10 @@ function Explore() {
     }
 
     const aScore =
-      ranking.find((item) => item.trail.id === a.id)?.score ?? 0
+      searchRanking.find((item) => item.trail.id === a.id)?.score ?? 0
 
     const bScore =
-      ranking.find((item) => item.trail.id === b.id)?.score ?? 0
+      searchRanking.find((item) => item.trail.id === b.id)?.score ?? 0
 
     return bScore - aScore
   })
@@ -446,7 +457,7 @@ function Explore() {
                 </div>
 
                 {sortedResults.slice(0, visibleCount).map((trail) => {
-                  const recommendation = ranking.find(
+                  const recommendation = searchRanking.find(
                     (item) => item.trail.id === trail.id
                   )
 

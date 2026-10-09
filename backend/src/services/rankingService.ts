@@ -1,4 +1,5 @@
 import {
+  findTrailsByIds,
   loadScopedTrails,
   type TrailScope,
 } from "../services/trailService.js"
@@ -25,12 +26,20 @@ import {
 
 export function calculateRanking(
   userId: number,
-  scope: TrailScope = {}
+  scope: TrailScope & {
+    trailIds?: number[]
+  } = {}
 ): RankingResult[] {
-  const trails = loadScopedTrails(userId, {
-    ...scope,
-    limit: null,
-  })
+  const trails = scope.trailIds?.length
+    ? findTrailsByIds(scope.trailIds)
+    : loadScopedTrails(
+        userId,
+        {
+          ...scope,
+          limit: null,
+        },
+        { fallbackToLatestCounty: false }
+      )
 
   const preferences =
     getUserPreferences(userId)
@@ -51,8 +60,9 @@ export function calculateRanking(
       return a.trail.id - b.trail.id
     })
 
-  const topMatches =
-    scope.limit == null
+  const topMatches = scope.trailIds?.length
+    ? ranked
+    : scope.limit == null
       ? ranked
       : ranked.slice(0, clampTrailLimit(scope.limit))
 

@@ -67,9 +67,16 @@ async function main() {
   const elevationLimit = Number(process.argv[2])
   const cellLimit = Number(process.argv[3])
 
+  const includePlaces =
+    process.argv.includes("--places")
+
   backfillCounties()
 
-  if (fs.existsSync(PARK_SHAPEFILE)) {
+  if (!includePlaces) {
+    console.log(
+      "Skipping park and location enrichment. Pass --places to run them."
+    )
+  } else if (fs.existsSync(PARK_SHAPEFILE)) {
     await enrichParkMetadata()
   } else {
     console.log(
@@ -77,9 +84,12 @@ async function main() {
     )
   }
 
-  if (fs.existsSync(PLACE_SHAPEFILE)) {
+  if (
+    includePlaces &&
+    fs.existsSync(PLACE_SHAPEFILE)
+  ) {
     await enrichLocations()
-  } else {
+  } else if (includePlaces) {
     console.log(
       `Skipping location enrichment. Shapefile not found at ${PLACE_SHAPEFILE}`
     )

@@ -68,6 +68,18 @@ function writeSession(session: RecordingSession | null) {
   }
 }
 
+export async function discardRecording(activityId: number) {
+  const session = readSession()
+
+  if (!session || session.activityId !== activityId) {
+    return
+  }
+
+  await stopWatching()
+  locationError = null
+  writeSession(null)
+}
+
 export function getRecordingSnapshot(): Snapshot {
   return {
     session: readSession(),

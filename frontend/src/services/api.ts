@@ -255,9 +255,14 @@ export async function getRanking(
     county?: string
     bbox?: string
     limit?: number
+    ids?: number[]
   } = {}
 ): Promise<RankedTrail[]> {
   const params = new URLSearchParams()
+
+  if (scope.ids && scope.ids.length > 0) {
+    params.set("ids", scope.ids.join(","))
+  }
 
   if (scope.county) {
     params.set("county", scope.county)
@@ -402,6 +407,21 @@ export async function createActivity(input: {
   }
 
   return response.json()
+}
+
+export async function deleteActivity(
+  activityId: number
+): Promise<void> {
+  const response = await apiFetch(
+    `${API_BASE_URL}/activities/${activityId}`,
+    {
+      method: "DELETE",
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to delete hike")
+  }
 }
 
 export async function getActivities(

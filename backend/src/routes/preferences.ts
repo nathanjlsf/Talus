@@ -35,6 +35,12 @@ router.get("/:userId/ranking", (req, res) => {
   const limitValue = Number(req.query.limit)
   const bbox = String(req.query.bbox ?? "").trim()
   const bounds = bbox ? parseBbox(bbox) : null
+  const trailIds = String(req.query.ids ?? "")
+    .split(",")
+    .map((value) => Number(value))
+    .filter(
+      (id) => Number.isInteger(id) && id > 0
+    )
 
   if (bbox && !bounds) {
     res.status(400).json({
@@ -49,6 +55,9 @@ router.get("/:userId/ranking", (req, res) => {
     bounds,
     limit: Number.isInteger(limitValue)
       ? limitValue
+      : undefined,
+    trailIds: trailIds.length > 0
+      ? trailIds
       : undefined,
   })
 

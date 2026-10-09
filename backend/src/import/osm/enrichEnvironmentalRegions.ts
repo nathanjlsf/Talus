@@ -3,11 +3,11 @@ import db from "../../db/database.js"
 import { getTrailGeometryLines } from "../../repositories/trailGeometryRepository.js"
 
 import { enrichEnvironmentalData } from "./enrichEnvironmental.js"
+import { openEnvironmentalFeatureIndex } from "./environmentalFromPbf.js"
 import {
   CELL_DEGREES,
   cellKey,
 } from "./hikingWays.js"
-import { fetchNearbyEnvironmentalFeatures } from "./overpass.js"
 
 import type { TrailPoint } from "./environmentalScoring.js"
 
@@ -109,69 +109,70 @@ export async function enrichEnvironmentalRegions(
 
   let scored = 0
   let processedCells = 0
+  const featureIndex =
+    await openEnvironmentalFeatureIndex()
 
-  for (const [cell, cellTrails] of cells) {
-    if (processedCells >= cellLimit) {
-      break
-    }
+  try {
+    for (const [cell, cellTrails] of cells) {
+      if (processedCells >= cellLimit) {
+        break
+      }
 
-    const bounds = cellBounds(cell)
+      const bounds = cellBounds(cell)
 
-    if (!bounds) {
-      continue
-    }
-
-    console.log(
-      `Fetching environmental features for cell ${cell} (${cellTrails.length} trails)...`
-    )
-
-    const features =
-      await fetchNearbyEnvironmentalFeatures(
-        bounds.south,
-        bounds.west,
-        bounds.north,
-        bounds.east
-      )
-
-    const batch = cellTrails.slice(
-      0,
-      TRAILS_PER_CELL
-    )
-
-    for (const trail of batch) {
-      const points = samplePoints(
-        getTrailGeometryLines(trail.id)
-          .flat()
-          .map((point) => ({
-            lat: point.latitude,
-            lon: point.longitude,
-          }))
-      )
-
-      if (points.length < 2) {
+      if (!bounds) {
         continue
       }
 
-      const enrichment = enrichEnvironmentalData(
-        points,
-        features
+      console.log(
+        `Scoring environmental features for cell ${cell} (${cellTrails.length} trails)...`
       )
 
-      update.run(
-        enrichment.scores.forest,
-        enrichment.scores.water,
-        enrichment.scores.coastal,
-        trail.id
+      const features =
+        featureIndex.featuresForCell(cell)
+
+      const batch = cellTrails.slice(
+        0,
+        TRAILS_PER_CELL
       )
 
-      scored += 1
+      for (const trail of batch) {
+        const points = samplePoints(
+          getTrailGeometryLines(trail.id)
+            .flat()
+            .map((point) => ({
+              lat: point.latitude,
+              lon: point.longitude,
+            }))
+        )
+
+        if (points.length < 2) {
+          continue
+        }
+
+        const enrichment = enrichEnvironmentalData(
+          points,
+          features
+        )
+
+        update.run(
+          enrichment.scores.forest,
+          enrichment.scores.water,
+          enrichment.scores.coastal,
+          trail.id
+        )
+
+        scored += 1
+      }
+
+      processedCells += 1
+
+      console.log(
+        `Scored ${batch.length} trails in cell ${cell}`
+      )
     }
-
-    processedCells += 1
-
-    console.log(
-      `Scored ${batch.length} trails in cell ${cell}`
-    )
+  } finally {
+    featureIndex.close()
   }
 
   console.log(

@@ -4,7 +4,8 @@ import {
   NavigationControl,
   type ExpressionSpecification,
   type GeoJSONSource,
-  type MapLayerMouseEvent,
+  type MapGeoJSONFeature,
+  type PointLike,
 } from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 
@@ -13,15 +14,52 @@ import type { TrailMapFeature } from "../services/api"
 const MAP_STYLE =
   "https://tiles.openfreemap.org/styles/liberty"
 
+interface MapPadding {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
 interface TrailMapProps {
   features: TrailMapFeature[]
   selectedId?: number | null
   bounds?: [number, number, number, number] | null
+  fitPadding?: MapPadding
+  location?: [number, number] | null
   fitOnce?: boolean
   enableMoves?: boolean
   onSelect?: (trailId: number) => void
   onBoundsChange?: (bbox: string) => void
 }
+
+function locationCollection(
+  location: [number, number] | null
+) {
+  if (!location) {
+    return {
+      type: "FeatureCollection" as const,
+      features: [],
+    }
+  }
+
+  return {
+    type: "FeatureCollection" as const,
+    features: [
+      {
+        type: "Feature" as const,
+        geometry: {
+          type: "Point" as const,
+          coordinates: location,
+        },
+        properties: {},
+      },
+    ],
+  }
+}
+
+const MOUSE_HIT_RADIUS = 12
+const TOUCH_HIT_RADIUS = 24
 
 function lineWidth(
   selectedId: number | null
@@ -34,10 +72,119 @@ function lineWidth(
   ]
 }
 
+function usesCoarsePointer() {
+  return window.matchMedia("(any-pointer: coarse)").matches
+}
+
+function hitRadius() {
+  return usesCoarsePointer() ? TOUCH_HIT_RADIUS : MOUSE_HIT_RADIUS
+}
+
+function hitBox(
+  point: { x: number; y: number },
+  radius: number
+): [PointLike, PointLike] {
+  return [
+    [point.x - radius, point.y - radius],
+    [point.x + radius, point.y + radius],
+  ]
+}
+
+function pointSegmentDistance(
+  point: { x: number; y: number },
+  start: { x: number; y: number },
+  end: { x: number; y: number }
+) {
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+  const lengthSq = dx * dx + dy * dy
+
+  if (lengthSq === 0) {
+    return Math.hypot(point.x - start.x, point.y - start.y)
+  }
+
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((point.x - start.x) * dx + (point.y - start.y) * dy) /
+        lengthSq
+    )
+  )
+
+  return Math.hypot(
+    point.x - (start.x + t * dx),
+    point.y - (start.y + t * dy)
+  )
+}
+
+function lineRings(
+  geometry: MapGeoJSONFeature["geometry"]
+): number[][][] {
+  if (geometry.type === "LineString") {
+    return [geometry.coordinates]
+  }
+
+  if (geometry.type === "MultiLineString") {
+    return geometry.coordinates
+  }
+
+  return []
+}
+
+function nearestTrailId(
+  map: MapLibreMap,
+  point: { x: number; y: number },
+  radius: number
+) {
+  const features = map.queryRenderedFeatures(hitBox(point, radius), {
+    layers: ["trails-line"],
+  })
+
+  let bestId: number | null = null
+  let bestDistance = radius
+
+  for (const feature of features) {
+    const id = Number(feature.properties?.id)
+
+    if (!Number.isInteger(id)) {
+      continue
+    }
+
+    for (const ring of lineRings(feature.geometry)) {
+      for (let index = 1; index < ring.length; index += 1) {
+        const start = map.project([
+          ring[index - 1][0],
+          ring[index - 1][1],
+        ])
+        const end = map.project([
+          ring[index][0],
+          ring[index][1],
+        ])
+        const distance = pointSegmentDistance(point, start, end)
+
+        if (distance < bestDistance) {
+          bestDistance = distance
+          bestId = id
+        }
+      }
+    }
+  }
+
+  return bestId
+}
+
 function TrailMap({
   features,
   selectedId = null,
   bounds = null,
+  fitPadding = {
+    top: 48,
+    right: 48,
+    bottom: 48,
+    left: 48,
+  },
+  location = null,
   fitOnce = true,
   enableMoves = false,
   onSelect,
@@ -48,12 +195,14 @@ function TrailMap({
   const fittedKey = useRef<string | null>(null)
   const featuresRef = useRef(features)
   const selectedIdRef = useRef(selectedId)
+  const locationRef = useRef(location)
   const onSelectRef = useRef(onSelect)
   const onBoundsChangeRef = useRef(onBoundsChange)
   const reportMoves = useRef(false)
 
   featuresRef.current = features
   selectedIdRef.current = selectedId
+  locationRef.current = location
   onSelectRef.current = onSelect
   onBoundsChangeRef.current = onBoundsChange
 
@@ -69,6 +218,7 @@ function TrailMap({
       style: MAP_STYLE,
       center: [-122.45, 37.8],
       zoom: 9,
+      clickTolerance: usesCoarsePointer() ? 16 : 3,
     })
 
     map.on("error", (event) => {
@@ -122,21 +272,34 @@ function TrailMap({
         },
       })
 
-      map.on("click", "trails-line", (event: MapLayerMouseEvent) => {
-        const rawId = event.features?.[0]?.properties?.id
-        const id = Number(rawId)
+      map.addSource("user-location", {
+        type: "geojson",
+        data: locationCollection(locationRef.current),
+      })
 
-        if (Number.isInteger(id)) {
+      map.addLayer({
+        id: "user-location",
+        type: "circle",
+        source: "user-location",
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "#2f6fed",
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#ffffff",
+        },
+      })
+
+      map.on("click", (event) => {
+        const id = nearestTrailId(map, event.point, hitRadius())
+
+        if (id != null) {
           onSelectRef.current?.(id)
         }
       })
 
-      map.on("mouseenter", "trails-line", () => {
-        map.getCanvas().style.cursor = "pointer"
-      })
-
-      map.on("mouseleave", "trails-line", () => {
-        map.getCanvas().style.cursor = ""
+      map.on("mousemove", (event) => {
+        const id = nearestTrailId(map, event.point, hitRadius())
+        map.getCanvas().style.cursor = id == null ? "" : "pointer"
       })
     })
 
@@ -198,12 +361,27 @@ function TrailMap({
 
   useEffect(() => {
     const map = mapRef.current
+    const source = map?.getSource("user-location") as
+      | GeoJSONSource
+      | undefined
+
+    source?.setData(locationCollection(location))
+  }, [location])
+
+  useEffect(() => {
+    const map = mapRef.current
 
     if (!map || !bounds) {
       return
     }
 
-    const key = bounds.join(",")
+    const key = [
+      bounds.join(","),
+      fitPadding.top,
+      fitPadding.right,
+      fitPadding.bottom,
+      fitPadding.left,
+    ].join(":")
 
     if (fitOnce && fittedKey.current === key) {
       return
@@ -218,7 +396,7 @@ function TrailMap({
         [bounds[2], bounds[3]],
       ],
       {
-        padding: 48,
+        padding: fitPadding,
         maxZoom: 14,
         duration: 0,
       }
@@ -227,7 +405,7 @@ function TrailMap({
     map.once("idle", () => {
       reportMoves.current = enableMoves
     })
-  }, [bounds, enableMoves, fitOnce])
+  }, [bounds, enableMoves, fitOnce, fitPadding])
 
   return (
     <div

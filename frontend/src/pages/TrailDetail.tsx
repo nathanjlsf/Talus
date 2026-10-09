@@ -50,7 +50,7 @@ function TrailDetail() {
 
         const [ranking, geometry] = await Promise.all([
           getRanking(user.id, {
-            county: trailData.county ?? undefined,
+            ids: [trailId],
           }),
           getTrailGeometry(trailId).catch(() => null),
         ])

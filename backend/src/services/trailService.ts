@@ -3,6 +3,7 @@ import {
   deleteTrail,
   getLatestTrailCounty,
   getTrailById,
+  getTrailsByIds,
   searchTrails,
   type Trail,
 } from "../repositories/trailRepository.js"
@@ -22,12 +23,18 @@ export interface TrailScope {
 
 export function loadScopedTrails(
   userId: number | null,
-  scope: TrailScope = {}
+  scope: TrailScope = {},
+  options: {
+    fallbackToLatestCounty?: boolean
+  } = {}
 ): Trail[] {
+  const fallbackToLatestCounty =
+    options.fallbackToLatestCounty !== false
+
   const county = scope.bounds
     ? undefined
     : scope.county?.trim() ||
-      (userId
+      (fallbackToLatestCounty && userId
         ? getLatestTrailCounty(userId) ?? undefined
         : undefined)
 
@@ -45,6 +52,12 @@ export function listTrails(
 
 export function findTrail(id: number): Trail | undefined {
   return getTrailById(id)
+}
+
+export function findTrailsByIds(
+  ids: number[]
+): Trail[] {
+  return getTrailsByIds(ids)
 }
 
 export function addTrail(input: {

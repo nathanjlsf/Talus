@@ -4,6 +4,7 @@ import type { Trail } from "../repositories/trailRepository.js"
 
 vi.mock("./trailService.js", () => ({
   loadScopedTrails: vi.fn(),
+  findTrailsByIds: vi.fn(),
 }))
 
 vi.mock("./preferenceService.js", () => ({
@@ -12,9 +13,13 @@ vi.mock("./preferenceService.js", () => ({
 
 import { getUserPreferences } from "./preferenceService.js"
 import { calculateRanking } from "./rankingService.js"
-import { loadScopedTrails } from "./trailService.js"
+import {
+  findTrailsByIds,
+  loadScopedTrails,
+} from "./trailService.js"
 
 const loadScopedTrailsMock = vi.mocked(loadScopedTrails)
+const findTrailsByIdsMock = vi.mocked(findTrailsByIds)
 const getUserPreferencesMock = vi.mocked(getUserPreferences)
 
 function trail(
@@ -49,6 +54,7 @@ function trail(
 describe("calculateRanking", () => {
   beforeEach(() => {
     loadScopedTrailsMock.mockReset()
+    findTrailsByIdsMock.mockReset()
     getUserPreferencesMock.mockReset()
     getUserPreferencesMock.mockReturnValue([
       {
@@ -72,10 +78,14 @@ describe("calculateRanking", () => {
 
     const ranking = calculateRanking(7, { county: "Marin" })
 
-    expect(loadScopedTrailsMock).toHaveBeenCalledWith(7, {
-      county: "Marin",
-      limit: null,
-    })
+    expect(loadScopedTrailsMock).toHaveBeenCalledWith(
+      7,
+      {
+        county: "Marin",
+        limit: null,
+      },
+      { fallbackToLatestCounty: false }
+    )
     expect(ranking.map((item) => item.trail.name)).toEqual([
       "Zion Overlook",
       "Alpine Loop",
@@ -83,6 +93,20 @@ describe("calculateRanking", () => {
     expect(ranking[0]?.rank).toBe(1)
     expect(ranking[0]?.score).toBeGreaterThan(
       ranking[1]?.score ?? 0
+    )
+  })
+
+  it("does not limit recommendations to the latest hike county", () => {
+    loadScopedTrailsMock.mockReturnValue([
+      trail(3, "Upper Yosemite Falls Trail", 0.8),
+    ])
+
+    calculateRanking(7, {})
+
+    expect(loadScopedTrailsMock).toHaveBeenCalledWith(
+      7,
+      { limit: null },
+      { fallbackToLatestCounty: false }
     )
   })
 
@@ -96,5 +120,21 @@ describe("calculateRanking", () => {
 
     expect(ranking).toHaveLength(1)
     expect(ranking[0]?.trail.name).toBe("Zion Overlook")
+  })
+
+  it("scores the requested trails even when they are outside the home county", () => {
+    findTrailsByIdsMock.mockReturnValue([
+      trail(9, "Imported Ridge", 0.2),
+    ])
+
+    const ranking = calculateRanking(7, {
+      trailIds: [9],
+    })
+
+    expect(loadScopedTrailsMock).not.toHaveBeenCalled()
+    expect(findTrailsByIdsMock).toHaveBeenCalledWith([9])
+    expect(ranking).toHaveLength(1)
+    expect(ranking[0]?.trail.name).toBe("Imported Ridge")
+    expect(ranking[0]?.score).toEqual(expect.any(Number))
   })
 })

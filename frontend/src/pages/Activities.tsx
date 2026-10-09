@@ -2,10 +2,12 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router"
 
 import {
+  deleteActivity,
   getActivities,
   getCurrentTalusUser,
   type Activity,
 } from "../services/api"
+import { discardRecording } from "../services/recordingSession"
 
 function formatActivityDate(date: string) {
   return new Date(date).toLocaleDateString("en-US", {
@@ -24,6 +26,65 @@ function formatActivityDuration(seconds: number) {
   }
 
   return `${minutes} min`
+}
+
+function DeleteHikeControl({
+  activity,
+  pending,
+  deleting,
+  error,
+  onAsk,
+  onCancel,
+  onConfirm,
+}: {
+  activity: Activity
+  pending: boolean
+  deleting: boolean
+  error: string | null
+  onAsk: () => void
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="ml-auto flex flex-col items-end gap-2">
+      {pending ? (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <p className="text-sm text-[#526052]">
+            Delete this hike?
+          </p>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            className="min-h-11 rounded-full px-3 text-sm font-medium text-[#526052]"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={onConfirm}
+            className="min-h-11 rounded-full bg-[#7a3b2e] px-4 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {deleting ? "Deleting..." : "Delete hike"}
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onAsk}
+          className="min-h-11 rounded-full px-1 text-sm font-medium text-[#7a3b2e]"
+        >
+          Delete
+        </button>
+      )}
+
+      {error && pending && (
+        <p className="text-sm text-red-700">{error}</p>
+      )}
+    </div>
+  )
 }
 
 function RatingSummary({
@@ -50,6 +111,36 @@ function Activities() {
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<
+    number | null
+  >(null)
+  const [deletingId, setDeletingId] = useState<number | null>(
+    null
+  )
+  const [deleteError, setDeleteError] = useState<string | null>(
+    null
+  )
+
+  async function removeHike(activity: Activity) {
+    try {
+      setDeletingId(activity.id)
+      setDeleteError(null)
+      await deleteActivity(activity.id)
+      await discardRecording(activity.id)
+      setActivities((current) =>
+        current.filter((item) => item.id !== activity.id)
+      )
+      setPendingDeleteId(null)
+    } catch (removeError) {
+      setDeleteError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Couldn't delete that hike"
+      )
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     async function loadActivities() {
@@ -172,32 +263,40 @@ function Activities() {
               </div>
 
               {!activity.experience && (
-                <div className="mt-6 border-t border-[#d8d2c4] pt-6">
+                <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[#d8d2c4] pt-6">
                   <button
                     type="button"
                     onClick={() => {
                       navigate(`/activities/${activity.id}/experience`)
                     }}
-                    className="min-h-11 w-full rounded-full bg-[#314936] px-5 py-2.5 font-medium sm:w-auto text-white transition hover:bg-[#263b2b]"
+                    className="min-h-11 rounded-full bg-[#314936] px-5 py-2.5 font-medium text-white transition hover:bg-[#263b2b]"
                   >
                     Tell Talus how it went
                   </button>
+
+                  <DeleteHikeControl
+                    activity={activity}
+                    pending={pendingDeleteId === activity.id}
+                    deleting={deletingId === activity.id}
+                    error={deleteError}
+                    onAsk={() => {
+                      setPendingDeleteId(activity.id)
+                      setDeleteError(null)
+                    }}
+                    onCancel={() => {
+                      setPendingDeleteId(null)
+                      setDeleteError(null)
+                    }}
+                    onConfirm={() => {
+                      void removeHike(activity)
+                    }}
+                  />
                 </div>
               )}
 
               {activity.experience && (
                 <div className="mt-6 border-t border-[#d8d2c4] pt-6">
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg tracking-[0.15em] text-[#314936]">
-                      {"★".repeat(activity.experience.overall_rating)}
-                    </span>
-
-                    <span className="text-sm font-medium text-[#687565]">
-                      {activity.experience.overall_rating}/5 overall
-                    </span>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-4 text-sm text-[#687565]">
+                  <div className="flex flex-wrap gap-4 text-sm text-[#687565]">
                     <RatingSummary
                       label="Scenery"
                       value={activity.experience.scenic_rating}
@@ -219,6 +318,34 @@ function Activities() {
                       "{activity.experience.notes}"
                     </p>
                   )}
+
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="text-lg tracking-[0.15em] text-[#314936]">
+                      {"★".repeat(activity.experience.overall_rating)}
+                    </span>
+
+                    <span className="text-sm font-medium text-[#687565]">
+                      {activity.experience.overall_rating}/5 overall
+                    </span>
+
+                    <DeleteHikeControl
+                      activity={activity}
+                      pending={pendingDeleteId === activity.id}
+                      deleting={deletingId === activity.id}
+                      error={deleteError}
+                      onAsk={() => {
+                        setPendingDeleteId(activity.id)
+                        setDeleteError(null)
+                      }}
+                      onCancel={() => {
+                        setPendingDeleteId(null)
+                        setDeleteError(null)
+                      }}
+                      onConfirm={() => {
+                        void removeHike(activity)
+                      }}
+                    />
+                  </div>
                 </div>
               )}
             </article>
