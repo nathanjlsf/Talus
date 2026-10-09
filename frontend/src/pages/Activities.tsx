@@ -29,7 +29,6 @@ function formatActivityDuration(seconds: number) {
 }
 
 function DeleteHikeControl({
-  activity,
   pending,
   deleting,
   error,
