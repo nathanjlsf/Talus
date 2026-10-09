@@ -23,6 +23,11 @@ import {
   type Bounds,
 } from "../geo/trailLines.js"
 
+import {
+  loadMapLines,
+  rebuildMissingMapLines,
+} from "./mapLines.js"
+
 const MAP_TRAIL_LIMIT = 200
 const OVERVIEW_TOLERANCE_DEGREES = 0.00015
 const DETAIL_POINT_LIMIT = 1500
@@ -101,25 +106,13 @@ function scoredTrails(
     getPreferencesForUser(userId)
 
   return trails
-    .map((trail) => {
-      const score =
-        calculatePersonalizedScore(
-          trail,
-          preferences
-        )
-
-      const reason =
-        generateRecommendationExplanations(
-          trail,
-          preferences
-        )[0]?.message ?? null
-
-      return {
+    .map((trail) => ({
+      trail,
+      score: calculatePersonalizedScore(
         trail,
-        score,
-        reason,
-      }
-    })
+        preferences
+      ),
+    }))
     .sort((first, second) => {
       if (second.score !== first.score) {
         return second.score - first.score
@@ -252,21 +245,150 @@ function toFeature(
   }
 }
 
+function pointBudget(bounds: Bounds | null): number {
+  if (!bounds) {
+    return 100
+  }
+
+  const span = Math.max(
+    bounds.maxLatitude - bounds.minLatitude,
+    bounds.maxLongitude - bounds.minLongitude
+  )
+
+  if (span > 2) {
+    return 20
+  }
+
+  if (span > 0.5) {
+    return 60
+  }
+
+  return 100
+}
+
+function thinCoordinates(
+  coordinates: number[][][],
+  limit: number
+): number[][][] {
+  const total = coordinates.reduce(
+    (count, line) => count + line.length,
+    0
+  )
+
+  if (total <= limit) {
+    return coordinates
+  }
+
+  const longest = [...coordinates].sort(
+    (first, second) => second.length - first.length
+  )
+  const kept: number[][][] = []
+  let used = 0
+
+  for (const line of longest) {
+    if (used >= limit) {
+      break
+    }
+
+    const room = limit - used
+    const next =
+      line.length <= room
+        ? line
+        : Array.from({ length: Math.max(2, room) }, (_, index) => {
+            const last = Math.max(1, Math.min(room, line.length) - 1)
+            const source = Math.round(
+              (index * (line.length - 1)) / last
+            )
+            return line[source]!
+          })
+
+    if (next.length >= 2) {
+      kept.push(next)
+      used += next.length
+    }
+  }
+
+  return kept
+}
+
+function featureFromCoordinates(
+  trail: BoundedTrail,
+  score: number,
+  reason: string | null,
+  coordinates: number[][][]
+): MapFeature {
+  return {
+    type: "Feature",
+    geometry: {
+      type: "MultiLineString",
+      coordinates,
+    },
+    properties: {
+      id: trail.id,
+      name: trail.name,
+      score: Math.round(score),
+      reason,
+      distance_miles: trail.distance_miles,
+      elevation_gain_feet:
+        trail.elevation_gain_feet,
+      difficulty: trail.difficulty,
+      location: trail.location,
+      park_name: trail.park_name,
+      county: trail.county ?? null,
+    },
+  }
+}
+
 function collectionFor(
   trails: BoundedTrail[],
   userId: number,
-  fitBounds: boolean
+  fitBounds: boolean,
+  view: Bounds | null
 ): MapFeatureCollection {
+  const preferences =
+    getPreferencesForUser(userId)
+
   const ranked = scoredTrails(
     trails,
     userId
-  ).slice(0, MAP_TRAIL_LIMIT)
-
-  const linesByTrail = geometryForTrails(
-    ranked.map((item) => item.trail.id)
   )
+    .slice(0, MAP_TRAIL_LIMIT)
+    .map((item) => ({
+      ...item,
+      reason:
+        generateRecommendationExplanations(
+          item.trail,
+          preferences
+        )[0]?.message ?? null,
+    }))
+
+  const trailIds = ranked.map((item) => item.trail.id)
+  const mapLines = loadMapLines(trailIds)
+  const missingIds = trailIds.filter(
+    (id) => !mapLines.has(id)
+  )
+  const linesByTrail = geometryForTrails(missingIds)
+
+  const budget = pointBudget(view)
 
   const features = ranked.flatMap((item) => {
+    const coordinates = mapLines.get(item.trail.id)
+
+    if (coordinates) {
+      const thinned = thinCoordinates(coordinates, budget)
+
+      return thinned.length > 0
+        ? [
+            featureFromCoordinates(
+              item.trail,
+              item.score,
+              item.reason,
+              thinned
+            ),
+          ]
+        : []
+    }
+
     const feature = toFeature(
       item.trail,
       item.score,
@@ -321,11 +443,14 @@ export function getMapTrails(input: {
   userId: number
   bounds: Bounds | null
 }): MapFeatureCollection {
+  rebuildMissingMapLines()
+
   if (input.bounds) {
     return collectionFor(
       trailsInBounds(input.bounds),
       input.userId,
-      false
+      false,
+      input.bounds
     )
   }
 
@@ -356,19 +481,22 @@ export function getMapTrails(input: {
       best.trail.max_longitude) /
     2
 
+  const view = {
+    minLatitude:
+      centerLatitude - DEFAULT_HALF_SPAN,
+    maxLatitude:
+      centerLatitude + DEFAULT_HALF_SPAN,
+    minLongitude:
+      centerLongitude - DEFAULT_HALF_SPAN,
+    maxLongitude:
+      centerLongitude + DEFAULT_HALF_SPAN,
+  }
+
   return collectionFor(
-    trailsInBounds({
-      minLatitude:
-        centerLatitude - DEFAULT_HALF_SPAN,
-      maxLatitude:
-        centerLatitude + DEFAULT_HALF_SPAN,
-      minLongitude:
-        centerLongitude - DEFAULT_HALF_SPAN,
-      maxLongitude:
-        centerLongitude + DEFAULT_HALF_SPAN,
-    }),
+    trailsInBounds(view),
     input.userId,
-    true
+    true,
+    view
   )
 }
 

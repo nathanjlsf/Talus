@@ -47,6 +47,13 @@ CREATE TABLE IF NOT EXISTS trail_geometry (
     UNIQUE(trail_id, way_id, sequence)
 );
 
+CREATE TABLE IF NOT EXISTS trail_map_lines (
+    trail_id INTEGER PRIMARY KEY,
+    coordinates TEXT NOT NULL,
+
+    FOREIGN KEY (trail_id) REFERENCES trails(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS trail_bounds (
     trail_id INTEGER PRIMARY KEY,
     min_latitude REAL NOT NULL,

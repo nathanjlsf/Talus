@@ -146,6 +146,9 @@ function MapPage() {
   locationRef.current = location
   fitsDnaRef.current = fitsDna
   sheetStopRef.current = sheetStop
+  const mapLoadRef = useRef<AbortController | null>(null)
+  const mapLoadTimerRef = useRef<number | null>(null)
+  const loadedBboxRef = useRef<string | null>(null)
   const dragRef = useRef<{
     startY: number
     startHeight: number
@@ -396,13 +399,50 @@ function MapPage() {
     setSheetStop(stopFor(next))
   }
 
+  function scheduleBounds(bbox: string) {
+    if (bbox === loadedBboxRef.current) {
+      return
+    }
+
+    if (mapLoadTimerRef.current !== null) {
+      window.clearTimeout(mapLoadTimerRef.current)
+    }
+
+    mapLoadTimerRef.current = window.setTimeout(() => {
+      mapLoadTimerRef.current = null
+      void loadBounds(bbox)
+    }, 250)
+  }
+
   async function loadBounds(bbox: string) {
+    if (bbox === loadedBboxRef.current) {
+      return
+    }
+
+    mapLoadRef.current?.abort()
+    const controller = new AbortController()
+    mapLoadRef.current = controller
+
     try {
       const user = await getCurrentTalusUser()
-      const map = await getMapTrails(user.id, bbox)
+      const map = await getMapTrails(
+        user.id,
+        bbox,
+        controller.signal
+      )
+
+      if (controller.signal.aborted) {
+        return
+      }
+
+      loadedBboxRef.current = bbox
       setFeatures(map.features)
       setError(null)
     } catch (loadError) {
+      if (controller.signal.aborted) {
+        return
+      }
+
       setError(
         loadError instanceof Error
           ? loadError.message
@@ -516,7 +556,7 @@ function MapPage() {
           listRef.current?.scrollTo({ top: 0 })
         }}
         onBoundsChange={(bbox) => {
-          void loadBounds(bbox)
+          scheduleBounds(bbox)
         }}
         onViewChange={(view) => {
           cameraRef.current = view

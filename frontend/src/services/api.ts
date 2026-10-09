@@ -214,7 +214,8 @@ export interface TrailMapCollection {
 
 export async function getMapTrails(
   userId: number,
-  bbox?: string
+  bbox?: string,
+  signal?: AbortSignal
 ): Promise<TrailMapCollection> {
   const params = new URLSearchParams({
     userId: String(userId),
@@ -225,7 +226,8 @@ export async function getMapTrails(
   }
 
   const response = await apiFetch(
-    `${API_BASE_URL}/trails/map?${params}`
+    `${API_BASE_URL}/trails/map?${params}`,
+    { signal }
   )
 
   if (!response.ok) {
