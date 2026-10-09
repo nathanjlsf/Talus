@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { Link, useNavigate } from "react-router"
+import {
+  Link,
+  useNavigate,
+  useNavigationType,
+} from "react-router"
 
 import TrailMap from "../components/TrailMap"
 import {
@@ -62,6 +66,25 @@ function nearestTrailId(
 
 type SheetStop = "closed" | "peek" | "open"
 
+type MapCamera = {
+  center: [number, number]
+  zoom: number
+}
+
+type MapPageSnapshot = {
+  features: TrailMapFeature[]
+  bounds: [number, number, number, number] | null
+  camera: MapCamera | null
+  selectedId: number | null
+  promotedId: number | null
+  location: [number, number] | null
+  fitsDna: boolean
+  sheetStop: SheetStop
+  listScroll: number
+}
+
+let mapPageMemory: MapPageSnapshot | null = null
+
 function placeLabel(trail: TrailMapFeature) {
   return (
     trailPlace(trail.properties) ||
@@ -71,31 +94,65 @@ function placeLabel(trail: TrailMapFeature) {
 
 function MapPage() {
   const navigate = useNavigate()
+  const navigationType = useNavigationType()
+  const restored =
+    navigationType === "POP" ? mapPageMemory : null
   const [features, setFeatures] = useState<
     TrailMapFeature[]
-  >([])
+  >(restored?.features ?? [])
   const [bounds, setBounds] = useState<
     [number, number, number, number] | null
-  >(null)
+  >(restored?.bounds ?? null)
   const [selectedId, setSelectedId] = useState<
     number | null
-  >(null)
+  >(restored?.selectedId ?? null)
+  const [promotedId, setPromotedId] = useState<
+    number | null
+  >(restored?.promotedId ?? null)
   const [location, setLocation] = useState<
     [number, number] | null
-  >(null)
-  const [fitsDna, setFitsDna] = useState(false)
+  >(restored?.location ?? null)
+  const [fitsDna, setFitsDna] = useState(
+    restored?.fitsDna ?? false
+  )
   const [sheetStop, setSheetStop] =
-    useState<SheetStop>("peek")
+    useState<SheetStop>(restored?.sheetStop ?? "peek")
+  const [holdCamera, setHoldCamera] = useState(
+    restored?.camera != null
+  )
   const [sheetHeight, setSheetHeight] = useState<
     number | null
   >(null)
   const [isDesktop, setIsDesktop] = useState(false)
   const sheetRef = useRef<HTMLElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const cameraRef = useRef<MapCamera | null>(
+    restored?.camera ?? null
+  )
+  const listScrollRef = useRef(restored?.listScroll ?? 0)
+  const didLoadRef = useRef(restored != null)
+  const featuresRef = useRef(features)
+  const boundsRef = useRef(bounds)
+  const selectedIdRef = useRef(selectedId)
+  const promotedIdRef = useRef(promotedId)
+  const locationRef = useRef(location)
+  const fitsDnaRef = useRef(fitsDna)
+  const sheetStopRef = useRef(sheetStop)
+
+  featuresRef.current = features
+  boundsRef.current = bounds
+  selectedIdRef.current = selectedId
+  promotedIdRef.current = promotedId
+  locationRef.current = location
+  fitsDnaRef.current = fitsDna
+  sheetStopRef.current = sheetStop
   const dragRef = useRef<{
     startY: number
     startHeight: number
   } | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(
+    restored == null
+  )
   const [error, setError] = useState<string | null>(
     null
   )
@@ -116,6 +173,33 @@ function MapPage() {
   }, [])
 
   useEffect(() => {
+    return () => {
+      if (!didLoadRef.current) {
+        return
+      }
+
+      mapPageMemory = {
+        features: featuresRef.current,
+        bounds: boundsRef.current,
+        camera: cameraRef.current,
+        selectedId: selectedIdRef.current,
+        promotedId: promotedIdRef.current,
+        location: locationRef.current,
+        fitsDna: fitsDnaRef.current,
+        sheetStop: sheetStopRef.current,
+        listScroll:
+          listRef.current?.scrollTop ??
+          listScrollRef.current,
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (restored) {
+      didLoadRef.current = true
+      return
+    }
+
     let ignore = false
 
     async function loadMap() {
@@ -176,6 +260,7 @@ function MapPage() {
         }
       } finally {
         if (!ignore) {
+          didLoadRef.current = true
           setLoading(false)
         }
       }
@@ -332,17 +417,37 @@ function MapPage() {
         !fitsDna ||
         feature.properties.score >= DNA_MATCH
     )
-    .sort(
-      (first, second) =>
+    .sort((first, second) => {
+      if (first.properties.id === promotedId) {
+        return -1
+      }
+
+      if (second.properties.id === promotedId) {
+        return 1
+      }
+
+      return (
         second.properties.score -
         first.properties.score
-    )
+      )
+    })
+
+  useEffect(() => {
+    if (restored && promotedId === restored.promotedId) {
+      listRef.current?.scrollTo({
+        top: listScrollRef.current,
+      })
+      return
+    }
+
+    listRef.current?.scrollTo({ top: 0 })
+  }, [promotedId, restored])
 
   const selected =
     visible.find(
       (feature) =>
         feature.properties.id === selectedId
-    ) ?? visible[0] ?? null
+    ) ?? null
 
   async function startHike() {
     const current = getRecordingSnapshot().session
@@ -384,7 +489,7 @@ function MapPage() {
       <TrailMap
         features={visible}
         selectedId={selected?.properties.id ?? null}
-        bounds={bounds}
+        bounds={holdCamera ? null : bounds}
         location={location}
         fitPadding={
           isDesktop
@@ -397,12 +502,24 @@ function MapPage() {
               }
         }
         enableMoves={!loading}
+        initialView={restored?.camera ?? null}
         onSelect={(trailId) => {
+          if (trailId == null) {
+            setSelectedId(null)
+            setPromotedId(null)
+            return
+          }
+
           setSelectedId(trailId)
+          setPromotedId(trailId)
           setSheetStop("open")
+          listRef.current?.scrollTo({ top: 0 })
         }}
         onBoundsChange={(bbox) => {
           void loadBounds(bbox)
+        }}
+        onViewChange={(view) => {
+          cameraRef.current = view
         }}
       />
 
@@ -466,7 +583,13 @@ function MapPage() {
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3">
+        <div
+          ref={listRef}
+          onScroll={(event) => {
+            listScrollRef.current = event.currentTarget.scrollTop
+          }}
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-3"
+        >
           {visible.length === 0 && !loading && (
             <p className="px-2 py-3 text-sm text-[#687565]">
               No trails in this view
@@ -498,6 +621,7 @@ function MapPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    setHoldCamera(false)
                     setSelectedId(trail.id)
                     setBounds(featureBounds(feature))
                   }}

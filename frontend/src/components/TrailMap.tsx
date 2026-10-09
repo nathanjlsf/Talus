@@ -29,8 +29,16 @@ interface TrailMapProps {
   location?: [number, number] | null
   fitOnce?: boolean
   enableMoves?: boolean
-  onSelect?: (trailId: number) => void
+  initialView?: {
+    center: [number, number]
+    zoom: number
+  } | null
+  onSelect?: (trailId: number | null) => void
   onBoundsChange?: (bbox: string) => void
+  onViewChange?: (view: {
+    center: [number, number]
+    zoom: number
+  }) => void
 }
 
 function locationCollection(
@@ -187,8 +195,10 @@ function TrailMap({
   location = null,
   fitOnce = true,
   enableMoves = false,
+  initialView = null,
   onSelect,
   onBoundsChange,
+  onViewChange,
 }: TrailMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -198,6 +208,8 @@ function TrailMap({
   const locationRef = useRef(location)
   const onSelectRef = useRef(onSelect)
   const onBoundsChangeRef = useRef(onBoundsChange)
+  const onViewChangeRef = useRef(onViewChange)
+  const initialViewRef = useRef(initialView)
   const reportMoves = useRef(false)
 
   featuresRef.current = features
@@ -205,6 +217,7 @@ function TrailMap({
   locationRef.current = location
   onSelectRef.current = onSelect
   onBoundsChangeRef.current = onBoundsChange
+  onViewChangeRef.current = onViewChange
 
   useEffect(() => {
     const container = containerRef.current
@@ -216,8 +229,10 @@ function TrailMap({
     const map = new MapLibreMap({
       container,
       style: MAP_STYLE,
-      center: [-122.45, 37.8],
-      zoom: 9,
+      center: initialViewRef.current?.center ?? [
+        -122.45, 37.8,
+      ],
+      zoom: initialViewRef.current?.zoom ?? 9,
       clickTolerance: usesCoarsePointer() ? 16 : 3,
     })
 
@@ -291,10 +306,7 @@ function TrailMap({
 
       map.on("click", (event) => {
         const id = nearestTrailId(map, event.point, hitRadius())
-
-        if (id != null) {
-          onSelectRef.current?.(id)
-        }
+        onSelectRef.current?.(id)
       })
 
       map.on("mousemove", (event) => {
@@ -303,7 +315,17 @@ function TrailMap({
       })
     })
 
+    function publishView() {
+      const center = map.getCenter()
+      onViewChangeRef.current?.({
+        center: [center.lng, center.lat],
+        zoom: map.getZoom(),
+      })
+    }
+
     map.on("moveend", () => {
+      publishView()
+
       if (!reportMoves.current) {
         return
       }
@@ -371,7 +393,25 @@ function TrailMap({
   useEffect(() => {
     const map = mapRef.current
 
-    if (!map || !bounds) {
+    if (!map) {
+      return
+    }
+
+    if (!bounds) {
+      if (!initialViewRef.current) {
+        return
+      }
+
+      const enableReporting = () => {
+        reportMoves.current = enableMoves
+      }
+
+      if (map.loaded()) {
+        enableReporting()
+      } else {
+        map.once("idle", enableReporting)
+      }
+
       return
     }
 
