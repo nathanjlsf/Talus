@@ -16,6 +16,10 @@ import {
 } from "../repositories/preferenceRepository.js"
 
 import {
+  blendPreferenceScores,
+} from "../ranking/blendPreferences.js"
+
+import {
   calculatePreferences,
 } from "../ranking/calculatePreferences.js"
 
@@ -29,11 +33,6 @@ import {
 
 import {
   calculateExperienceSignal,
-} from "../ranking/experienceSignal.js"
-
-import {
-  EXPERIENCE_ATTRIBUTES,
-  type ExperienceAttribute,
 } from "../ranking/experienceSignal.js"
 
 import {
@@ -164,17 +163,25 @@ export function calculateCombinedPreferences(
   const trackResult =
     calculateTrackSignal(recordedHikes)
 
+  const comparisons =
+    getComparisonsForUser(userId)
+
   const pairwisePreferences =
-    calculateUserPreferences(userId, trails)
+    calculatePreferences(
+      comparisons.map((comparison) => ({
+        winnerTrailId:
+          comparison.winner_trail_id,
+        loserTrailId:
+          comparison.loser_trail_id,
+      })),
+      trails
+    )
 
   const experiences =
     listExperiencesForUser(userId)
 
   const experienceResult =
     calculateExperienceSignal(experiences)
-
-  const comparisons =
-    getComparisonsForUser(userId)
 
   const trailsById = new Map(
     trails.map((trail) => [
@@ -216,117 +223,12 @@ export function calculateCombinedPreferences(
       )
     )
 
-  const combinedPreferences = pairwisePreferences.map(
-    (preference) => {
-      const attribute =
-        preference.attribute
-
-      const isExperienceAttribute =
-        EXPERIENCE_ATTRIBUTES.includes(
-          attribute as ExperienceAttribute
-        )
-
-      const experienceEvidence =
-        isExperienceAttribute
-          ? experienceResult.evidence[
-              attribute as ExperienceAttribute
-            ]
-          : 0
-
-      const pairwiseEvidence =
-        comparisons.length
-
-      const trackEvidence =
-        trackResult.evidence[attribute]
-
-      if (
-        pairwiseEvidence === 0 &&
-        experienceEvidence === 0 &&
-        trackEvidence === 0
-      ) {
-        return preference
-      }
-
-      const experienceSignal =
-        isExperienceAttribute
-          ? experienceResult.signal[
-              attribute as ExperienceAttribute
-            ]
-          : 0
-
-      const experienceScore =
-        50 +
-        experienceSignal * 50
-
-      const trackScore =
-        50 +
-        trackResult.signal[attribute] * 50
-
-      const pairwiseStrength =
-        1 -
-        Math.exp(
-          -pairwiseEvidence / 4
-        )
-
-      const experienceStrength =
-        1 -
-        Math.exp(
-          -experienceEvidence / 4
-        )
-
-      const trackStrength =
-        1 -
-        Math.exp(
-          -trackEvidence / 4
-        )
-
-      const totalStrength =
-        pairwiseStrength +
-        experienceStrength +
-        trackStrength
-
-      if (totalStrength === 0) {
-        return preference
-      }
-
-      const combinedScore =
-        (
-          preference.score *
-            pairwiseStrength +
-          experienceScore *
-            experienceStrength +
-          trackScore *
-            trackStrength
-        ) / totalStrength
-
-      const combinedConfidence =
-        Math.min(
-          0.9,
-          1 -
-            Math.exp(
-              -(
-                pairwiseEvidence +
-                experienceEvidence +
-                trackEvidence
-              ) / 5
-            )
-        )
-
-      return {
-        attribute,
-        score: Math.max(
-          10,
-          Math.min(
-            90,
-            combinedScore
-          )
-        ),
-        confidence: Number(
-          combinedConfidence.toFixed(2)
-        ),
-      }
-    }
-  )
+  const combinedPreferences =
+    blendPreferenceScores(
+      pairwisePreferences,
+      experienceResult,
+      trackResult
+    )
 
   return applyPreferredRanges(
     combinedPreferences,
@@ -334,31 +236,22 @@ export function calculateCombinedPreferences(
   )
 }
 
-export function backfillMissingPreferredRanges(): number {
+export function refreshStoredPreferences(): number {
   const rows = db
     .prepare(`
-      SELECT DISTINCT preferences.user_id AS user_id
-      FROM preferences
-      WHERE preferences.attribute IN (
-        'distance',
-        'elevation',
-        'difficulty'
+      SELECT user_id FROM (
+        SELECT user_id
+        FROM preference_comparisons
+        UNION
+        SELECT activities.user_id AS user_id
+        FROM experiences
+        JOIN activities
+          ON activities.id = experiences.activity_id
+        UNION
+        SELECT user_id
+        FROM activities
+        WHERE completion_fraction IS NOT NULL
       )
-        AND preferences.target IS NULL
-        AND (
-          EXISTS (
-            SELECT 1
-            FROM preference_comparisons
-            WHERE preference_comparisons.user_id = preferences.user_id
-          )
-          OR EXISTS (
-            SELECT 1
-            FROM experiences
-            JOIN activities
-              ON activities.id = experiences.activity_id
-            WHERE activities.user_id = preferences.user_id
-          )
-        )
     `)
     .all() as Array<{ user_id: number }>
 

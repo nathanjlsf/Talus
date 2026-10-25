@@ -19,6 +19,10 @@ import {
 } from "../ranking/recommendationExplanation.js"
 
 import {
+  diversifyRanked,
+} from "../ranking/diversity.js"
+
+import {
   simplifyPath,
   type Bounds,
 } from "../geo/trailLines.js"
@@ -348,9 +352,11 @@ function collectionFor(
   const preferences =
     getPreferencesForUser(userId)
 
-  const ranked = scoredTrails(
-    trails,
-    userId
+  const ranked = diversifyRanked(
+    scoredTrails(
+      trails,
+      userId
+    )
   )
     .slice(0, MAP_TRAIL_LIMIT)
     .map((item) => ({

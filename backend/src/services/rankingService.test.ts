@@ -122,6 +122,22 @@ describe("calculateRanking", () => {
     expect(ranking[0]?.trail.name).toBe("Zion Overlook")
   })
 
+  it("defers a same-name trail before the result limit", () => {
+    loadScopedTrailsMock.mockReturnValue([
+      trail(1, "Coastal Loop", 0.95),
+      trail(2, "Coastal Loop", 0.9),
+      trail(3, "Ridge Line", 0.4),
+    ])
+
+    const ranking = calculateRanking(7, { limit: 2 })
+
+    expect(ranking.map((item) => item.trail.id)).toEqual([
+      1,
+      3,
+    ])
+    expect(ranking.map((item) => item.rank)).toEqual([1, 2])
+  })
+
   it("scores the requested trails even when they are outside the home county", () => {
     findTrailsByIdsMock.mockReturnValue([
       trail(9, "Imported Ridge", 0.2),

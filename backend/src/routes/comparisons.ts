@@ -1,14 +1,10 @@
 import { Router } from "express"
 
 import {
-  calculateUserPreferences,
+  getUserPreferences,
   listComparisonsForUser,
   recordComparison,
 } from "../services/preferenceService.js"
-
-import {
-  getTrailsForUserSignals,
-} from "../repositories/trailRepository.js"
 
 import {
   selectComparisonPairs,
@@ -69,10 +65,7 @@ router.get("/next/:userId", (req, res) => {
       : []
 
   const preferences =
-    calculateUserPreferences(
-      userId,
-      getTrailsForUserSignals(userId)
-    )
+    getUserPreferences(userId)
 
   const seenPairs =
     comparisons.map((comparison) => ({

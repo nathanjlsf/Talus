@@ -24,6 +24,10 @@ import {
   generateRecommendationExplanations,
 } from "../ranking/recommendationExplanation.js"
 
+import {
+  diversifyRanked,
+} from "../ranking/diversity.js"
+
 export function calculateRanking(
   userId: number,
   scope: TrailScope & {
@@ -60,11 +64,13 @@ export function calculateRanking(
       return a.trail.id - b.trail.id
     })
 
+  const ordered = diversifyRanked(ranked)
+
   const topMatches = scope.trailIds?.length
-    ? ranked
+    ? ordered
     : scope.limit == null
-      ? ranked
-      : ranked.slice(0, clampTrailLimit(scope.limit))
+      ? ordered
+      : ordered.slice(0, clampTrailLimit(scope.limit))
 
   return topMatches
     .map((result, index) => ({

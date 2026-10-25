@@ -51,7 +51,7 @@ export function effortEnjoyment(
     hike.paceRatio !== null &&
     hike.paceRatio > 1.35
   ) {
-    return 0.15
+    return -0.6
   }
 
   if (hike.completionFraction >= 0.85) {

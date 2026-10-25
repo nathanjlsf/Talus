@@ -18,3 +18,7 @@ export interface UserPreference {
   target?: number | null
   tolerance?: number | null
 }
+
+export interface PreferenceWithEvidence extends UserPreference {
+  evidence: number
+}

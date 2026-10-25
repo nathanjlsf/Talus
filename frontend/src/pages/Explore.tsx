@@ -347,13 +347,15 @@ function Explore() {
       return a.elevation_gain_feet - b.elevation_gain_feet
     }
 
-    const aScore =
-      searchRanking.find((item) => item.trail.id === a.id)?.score ?? 0
+    const aRank =
+      searchRanking.find((item) => item.trail.id === a.id)?.rank ??
+      Number.MAX_SAFE_INTEGER
 
-    const bScore =
-      searchRanking.find((item) => item.trail.id === b.id)?.score ?? 0
+    const bRank =
+      searchRanking.find((item) => item.trail.id === b.id)?.rank ??
+      Number.MAX_SAFE_INTEGER
 
-    return bScore - aScore
+    return aRank - bRank
   })
 
   const activeFilterCount = [

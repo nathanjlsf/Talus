@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest"
 
+import type {
+  ExperienceWithTrail,
+} from "../repositories/experienceRepository.js"
+
 import {
   calculateExperienceSignal,
 } from "./experienceSignal.js"
 
 describe("calculateExperienceSignal", () => {
-  const trail = {
+  const trail: ExperienceWithTrail["trail"] = {
     id: 1,
     distance_miles: 6,
     elevation_gain_feet: 1200,
@@ -14,6 +18,9 @@ describe("calculateExperienceSignal", () => {
     scenic_score: 0.9,
     nature_score: 0.8,
     solitude_score: 0.7,
+    forest_score: null,
+    water_score: null,
+    coastal_score: null,
   }
 
   function createExperience(
@@ -121,6 +128,41 @@ describe("calculateExperienceSignal", () => {
         result.signal[attribute]
       ).toBe(0)
     }
+  })
+
+  it("lets a scenic rating override the overall rating", () => {
+    const result = calculateExperienceSignal([
+      {
+        ...createExperience(5),
+        scenic_rating: 1,
+      },
+    ])
+
+    expect(result.signal.scenic).toBeLessThan(0)
+    expect(result.signal.distance).toBeGreaterThan(0)
+    expect(result.signal.difficulty).toBeGreaterThan(0)
+  })
+
+  it("moves forest, water, and coastal with the overall rating", () => {
+    const experience = createExperience(5)
+
+    experience.trail = {
+      ...experience.trail,
+      forest_score: 0.9,
+      water_score: 0.9,
+      coastal_score: 0.1,
+    }
+
+    const result = calculateExperienceSignal([
+      experience,
+    ])
+
+    expect(result.signal.forest).toBeGreaterThan(0)
+    expect(result.signal.water).toBeGreaterThan(0)
+    expect(result.signal.coastal).toBeLessThan(0)
+    expect(result.evidence.forest).toBe(1)
+    expect(result.evidence.water).toBe(1)
+    expect(result.evidence.coastal).toBe(1)
   })
 
   it("tracks evidence for all seven attributes", () => {

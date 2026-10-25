@@ -310,6 +310,166 @@ describe("selectComparisonPairs", () => {
     })
   })
 
+  it("does not treat gravel as dirt when choosing a pair", () => {
+    const base = {
+      ...trails[2]!,
+      scenic_score: 0.5,
+      nature_score: 0.5,
+      solitude_score: 0.5,
+      forest_score: 0.5,
+      water_score: 0.5,
+      coastal_score: 0.5,
+    }
+
+    const catalog: Trail[] = [
+      {
+        ...base,
+        id: 1,
+        name: "Dirt",
+        terrain: "Dirt",
+      },
+      {
+        ...base,
+        id: 2,
+        name: "Gravel",
+        terrain: "Gravel",
+      },
+      {
+        ...base,
+        id: 3,
+        name: "Rocky",
+        terrain: "Rocky",
+      },
+    ]
+
+    const preferences: UserPreference[] = [
+      {
+        attribute: "terrain",
+        score: 50,
+        confidence: 0,
+      },
+      {
+        attribute: "scenic",
+        score: 80,
+        confidence: 1,
+      },
+    ]
+
+    expect(
+      selectComparisonPairs(catalog, 1, [], preferences)
+    ).toEqual([
+      {
+        firstTrailId: 1,
+        secondTrailId: 3,
+      },
+    ])
+  })
+
+  it("asks about an uncertain attribute instead of a confident one", () => {
+    const base = {
+      location: null,
+      park_name: null,
+      park_type: null,
+      park_source: null,
+      description: null,
+      estimated_time_minutes: 120,
+      elevation_gain_feet: 600,
+      difficulty: "Moderate",
+      difficulty_source: "unknown",
+      terrain: "Dirt",
+      nature_score: 0.5,
+      solitude_score: 0.5,
+      forest_score: 0.5,
+      water_score: 0.5,
+      coastal_score: 0.5,
+      created_at: "",
+    }
+
+    const catalog: Trail[] = [
+      {
+        ...base,
+        id: 1,
+        name: "Short",
+        distance_miles: 2,
+        scenic_score: 0.5,
+      },
+      {
+        ...base,
+        id: 2,
+        name: "Long",
+        distance_miles: 8,
+        scenic_score: 0.5,
+      },
+      {
+        ...base,
+        id: 3,
+        name: "Scenic",
+        distance_miles: 4,
+        scenic_score: 1,
+      },
+    ]
+
+    const scenicKnown: UserPreference[] = [
+      {
+        attribute: "distance",
+        score: 50,
+        confidence: 0,
+      },
+      {
+        attribute: "scenic",
+        score: 90,
+        confidence: 1,
+      },
+    ]
+
+    expect(
+      selectComparisonPairs(catalog, 1, [], scenicKnown)
+    ).toEqual([
+      {
+        firstTrailId: 1,
+        secondTrailId: 2,
+      },
+    ])
+  })
+
+  it("keeps the high and low tails of an attribute in a large catalog", () => {
+    const many: Trail[] = Array.from(
+      { length: 400 },
+      (_, index) => ({
+        ...trails[0]!,
+        id: index + 1,
+        name: `Trail ${index + 1}`,
+        distance_miles: 4,
+        elevation_gain_feet: 600,
+        difficulty: "Moderate",
+        terrain: "Dirt",
+        scenic_score: 0.5,
+        nature_score: 0.5,
+        solitude_score: 0.5,
+        forest_score: 0.5,
+        water_score: 0.5,
+        coastal_score: null,
+      })
+    )
+
+    many[249] = {
+      ...many[249]!,
+      coastal_score: 0,
+    }
+
+    many[250] = {
+      ...many[250]!,
+      coastal_score: 1,
+    }
+
+    const pairs = selectComparisonPairs(many, 1)
+
+    expect(pairs[0]).toEqual({
+      firstTrailId: 250,
+      secondTrailId: 251,
+    })
+  })
+
   it("still returns a pair from a large trail catalog", () => {
     const many = Array.from(
       { length: 500 },

@@ -201,6 +201,112 @@ describe("calculatePairInformation", () => {
     )
   })
 
+  it("includes forest when both trails are tagged", () => {
+    const first = createTrail({
+      forest_score: 0.1,
+    })
+
+    const second = createTrail({
+      id: 2,
+      forest_score: 0.9,
+    })
+
+    const information = calculatePairInformation(
+      first,
+      second,
+      [
+        {
+          attribute: "forest",
+          score: 50,
+          confidence: 0,
+        },
+      ]
+    )
+
+    expect(information).toBeCloseTo(0.8)
+  })
+
+  it("prefers a pair that straddles a sweet spot", () => {
+    const short = createTrail({
+      id: 1,
+      distance_miles: 2,
+    })
+
+    const long = createTrail({
+      id: 2,
+      distance_miles: 8,
+    })
+
+    const longer = createTrail({
+      id: 3,
+      distance_miles: 9,
+    })
+
+    const preferences: UserPreference[] = [
+      {
+        attribute: "distance",
+        score: 50,
+        confidence: 0,
+        target: 0.2,
+        tolerance: 0.1,
+      },
+    ]
+
+    const straddle = calculatePairInformation(
+      short,
+      long,
+      preferences
+    )
+
+    const sameSide = calculatePairInformation(
+      long,
+      longer,
+      preferences
+    )
+
+    expect(straddle).toBeGreaterThan(sameSide)
+  })
+
+  it("treats gravel as closer to dirt than to rocky", () => {
+    const dirt = createTrail({
+      id: 1,
+      terrain: "Dirt",
+    })
+
+    const gravel = createTrail({
+      id: 2,
+      terrain: "Gravel",
+    })
+
+    const rocky = createTrail({
+      id: 3,
+      terrain: "Rocky",
+    })
+
+    const preferences: UserPreference[] = [
+      {
+        attribute: "terrain",
+        score: 50,
+        confidence: 0,
+      },
+    ]
+
+    const gravelToDirt = calculatePairInformation(
+      gravel,
+      dirt,
+      preferences
+    )
+
+    const dirtToRocky = calculatePairInformation(
+      dirt,
+      rocky,
+      preferences
+    )
+
+    expect(gravelToDirt).toBeCloseTo(0.1)
+    expect(dirtToRocky).toBeGreaterThan(gravelToDirt)
+  })
+
   it("returns zero when confidence is complete", () => {
     const first = createTrail({
       distance_miles: 1,

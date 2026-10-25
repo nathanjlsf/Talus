@@ -22,6 +22,9 @@ export interface ExperienceWithTrail extends Experience {
     scenic_score: number | null
     nature_score: number | null
     solitude_score: number | null
+    forest_score?: number | null
+    water_score?: number | null
+    coastal_score?: number | null
   }
 }
 
@@ -104,7 +107,10 @@ export function getExperiencesForUser(
         trails.terrain,
         trails.scenic_score,
         trails.nature_score,
-        trails.solitude_score
+        trails.solitude_score,
+        trails.forest_score,
+        trails.water_score,
+        trails.coastal_score
       FROM experiences
       JOIN activities
         ON activities.id = experiences.activity_id
@@ -125,6 +131,9 @@ export function getExperiencesForUser(
         scenic_score: number | null
         nature_score: number | null
         solitude_score: number | null
+        forest_score: number | null
+        water_score: number | null
+        coastal_score: number | null
       }
     >
 
@@ -148,6 +157,9 @@ export function getExperiencesForUser(
       scenic_score: experience.scenic_score,
       nature_score: experience.nature_score,
       solitude_score: experience.solitude_score,
+      forest_score: experience.forest_score,
+      water_score: experience.water_score,
+      coastal_score: experience.coastal_score,
     },
   }))
 }

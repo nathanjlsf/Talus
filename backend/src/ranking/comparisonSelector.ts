@@ -5,109 +5,37 @@ import {
   calculatePairInformation,
 } from "./comparisonInformation.js"
 
+import {
+  getAttributeValue,
+  LEARNED_ATTRIBUTES,
+} from "./trailAttributes.js"
+
 export interface ComparisonPair {
   firstTrailId: number
   secondTrailId: number
 }
 
-function normalizeDifficulty(
-  difficulty: string
-): number {
-  switch (difficulty.toLowerCase()) {
-    case "easy":
-      return 0
+const MISSING_VALUE = 0.5
 
-    case "moderate":
-      return 0.5
+function getTrailVector(trail: Trail): number[] {
+  return LEARNED_ATTRIBUTES.map((attribute) => {
+    const value = getAttributeValue(
+      trail,
+      attribute
+    )
 
-    case "hard":
-      return 1
-
-    default:
-      return 0.5
-  }
-}
-
-function normalizeTerrain(
-  terrain: string | null
-): number {
-  if (!terrain) {
-    return 0.5
-  }
-
-  switch (terrain.toLowerCase()) {
-    case "paved":
-      return 0
-
-    case "dirt":
-      return 0.5
-
-    case "mixed":
-      return 0.75
-
-    case "rocky":
-      return 1
-
-    default:
-      return 0.5
-  }
-}
-
-function normalizeDistance(
-  distance: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, distance / 10)
-  )
-}
-
-function normalizeElevation(
-  elevation: number
-): number {
-  return Math.max(
-    0,
-    Math.min(1, elevation / 2000)
-  )
-}
-
-function getTrailVector(
-  trail: Trail
-): number[] {
-  return [
-    normalizeDistance(
-      trail.distance_miles
-    ),
-
-    normalizeElevation(
-      trail.elevation_gain_feet
-    ),
-
-    normalizeDifficulty(
-      trail.difficulty
-    ),
-
-    normalizeTerrain(
-      trail.terrain
-    ),
-
-    trail.scenic_score ?? 0.5,
-
-    trail.nature_score ?? 0.5,
-
-    trail.solitude_score ?? 0.5,
-  ]
+    return value === null
+      ? MISSING_VALUE
+      : value
+  })
 }
 
 function calculateDifference(
   first: Trail,
   second: Trail
 ): number {
-  const firstVector =
-    getTrailVector(first)
-
-  const secondVector =
-    getTrailVector(second)
+  const firstVector = getTrailVector(first)
+  const secondVector = getTrailVector(second)
 
   let squaredDifference = 0
 
@@ -116,11 +44,8 @@ function calculateDifference(
     index < firstVector.length;
     index += 1
   ) {
-    const firstValue =
-      firstVector[index]
-
-    const secondValue =
-      secondVector[index]
+    const firstValue = firstVector[index]
+    const secondValue = secondVector[index]
 
     if (
       firstValue === undefined ||
@@ -129,16 +54,12 @@ function calculateDifference(
       continue
     }
 
-    const difference =
-      firstValue - secondValue
+    const difference = firstValue - secondValue
 
-    squaredDifference +=
-      difference * difference
+    squaredDifference += difference * difference
   }
 
-  return Math.sqrt(
-    squaredDifference
-  )
+  return Math.sqrt(squaredDifference)
 }
 
 function getPairKey(
@@ -146,49 +67,102 @@ function getPairKey(
   secondTrailId: number
 ): string {
   return [
-    Math.min(
-      firstTrailId,
-      secondTrailId
-    ),
-    Math.max(
-      firstTrailId,
-      secondTrailId
-    ),
+    Math.min(firstTrailId, secondTrailId),
+    Math.max(firstTrailId, secondTrailId),
   ].join(":")
 }
 
 const CANDIDATE_LIMIT = 180
 
-function limitCandidates(
-  trails: Trail[]
-): Trail[] {
+function hasLearnedPreference(
+  preferences: UserPreference[]
+): boolean {
+  return preferences.some(
+    (preference) =>
+      preference.confidence > 0 ||
+      preference.target != null
+  )
+}
+
+function limitCandidates(trails: Trail[]): Trail[] {
   if (trails.length <= CANDIDATE_LIMIT) {
     return trails
   }
 
-  const sorted = [...trails].sort(
-    (first, second) => first.id - second.id
+  const selected = new Map<number, Trail>()
+  const tailCount = Math.max(
+    1,
+    Math.floor(
+      CANDIDATE_LIMIT /
+        (LEARNED_ATTRIBUTES.length * 2)
+    )
   )
 
-  const step = sorted.length / CANDIDATE_LIMIT
-  const indexes = new Set<number>()
-
-  for (
-    let index = 0;
-    index < CANDIDATE_LIMIT;
-    index += 1
-  ) {
-    indexes.add(
-      Math.min(
-        sorted.length - 1,
-        Math.floor(index * step)
+  for (const attribute of LEARNED_ATTRIBUTES) {
+    const valued = trails
+      .map((trail) => ({
+        trail,
+        value: getAttributeValue(trail, attribute),
+      }))
+      .filter(
+        (
+          item
+        ): item is {
+          trail: Trail
+          value: number
+        } => item.value !== null
       )
-    )
+      .sort(
+        (first, second) =>
+          first.value - second.value
+      )
+
+    for (const item of valued.slice(0, tailCount)) {
+      selected.set(item.trail.id, item.trail)
+    }
+
+    for (const item of valued.slice(-tailCount)) {
+      selected.set(item.trail.id, item.trail)
+    }
   }
 
-  return [...indexes]
-    .sort((first, second) => first - second)
-    .map((index) => sorted[index]!)
+  if (selected.size > CANDIDATE_LIMIT) {
+    return [...selected.values()]
+      .sort((first, second) => first.id - second.id)
+      .slice(0, CANDIDATE_LIMIT)
+  }
+
+  const remaining = [...trails]
+    .filter((trail) => !selected.has(trail.id))
+    .sort((first, second) => first.id - second.id)
+
+  const slots = CANDIDATE_LIMIT - selected.size
+
+  if (slots > 0 && remaining.length > 0) {
+    const step = remaining.length / slots
+
+    for (
+      let index = 0;
+      index < slots;
+      index += 1
+    ) {
+      const trail =
+        remaining[
+          Math.min(
+            remaining.length - 1,
+            Math.floor(index * step)
+          )
+        ]
+
+      if (trail) {
+        selected.set(trail.id, trail)
+      }
+    }
+  }
+
+  return [...selected.values()].sort(
+    (first, second) => first.id - second.id
+  )
 }
 
 export function selectComparisonPairs(
@@ -199,22 +173,21 @@ export function selectComparisonPairs(
   excludedTrailIds: number[] = []
 ): ComparisonPair[] {
   const seenPairKeys = new Set(
-    seenPairs.map(
-      (pair) =>
-        getPairKey(
-          pair.firstTrailId,
-          pair.secondTrailId
-        )
+    seenPairs.map((pair) =>
+      getPairKey(
+        pair.firstTrailId,
+        pair.secondTrailId
+      )
     )
   )
 
-  const excludedTrailIdSet =
-    new Set(excludedTrailIds)
+  const excludedTrailIdSet = new Set(
+    excludedTrailIds
+  )
 
   const candidates = limitCandidates(
     trails.filter(
-      (trail) =>
-        !excludedTrailIdSet.has(trail.id)
+      (trail) => !excludedTrailIdSet.has(trail.id)
     )
   )
 
@@ -251,22 +224,21 @@ export function selectComparisonPairs(
     best.pop()
   }
 
+  const learned =
+    hasLearnedPreference(preferences)
+
   for (
     let firstIndex = 0;
     firstIndex < candidates.length;
     firstIndex += 1
   ) {
     for (
-      let secondIndex =
-        firstIndex + 1;
+      let secondIndex = firstIndex + 1;
       secondIndex < candidates.length;
       secondIndex += 1
     ) {
-      const first =
-        candidates[firstIndex]
-
-      const second =
-        candidates[secondIndex]
+      const first = candidates[firstIndex]
+      const second = candidates[secondIndex]
 
       if (
         first === undefined ||
@@ -275,23 +247,19 @@ export function selectComparisonPairs(
         continue
       }
 
-      const pairKey =
-        getPairKey(
-          first.id,
-          second.id
-        )
+      const pairKey = getPairKey(
+        first.id,
+        second.id
+      )
 
-      if (
-        seenPairKeys.has(pairKey)
-      ) {
+      if (seenPairKeys.has(pairKey)) {
         continue
       }
 
-      const difference =
-        calculateDifference(
-          first,
-          second
-        )
+      const difference = calculateDifference(
+        first,
+        second
+      )
 
       const information =
         calculatePairInformation(
@@ -300,8 +268,7 @@ export function selectComparisonPairs(
           preferences
         )
 
-      const comparisonNumber =
-        seenPairs.length
+      const comparisonNumber = seenPairs.length
 
       const targetDifference =
         comparisonNumber % 4 === 0
@@ -313,15 +280,11 @@ export function selectComparisonPairs(
               : 0.8
 
       const differencePreference =
-        -Math.abs(
-          difference - targetDifference
-        )
+        -Math.abs(difference - targetDifference)
 
-      const score =
-        preferences.length > 0
-          ? information +
-            differencePreference * 0.5
-          : differencePreference
+      const score = learned
+        ? information + differencePreference * 0.5
+        : differencePreference
 
       consider({
         firstTrailId: first.id,
@@ -332,10 +295,7 @@ export function selectComparisonPairs(
   }
 
   return best.map(
-    ({
-      firstTrailId,
-      secondTrailId,
-    }) => ({
+    ({ firstTrailId, secondTrailId }) => ({
       firstTrailId,
       secondTrailId,
     })

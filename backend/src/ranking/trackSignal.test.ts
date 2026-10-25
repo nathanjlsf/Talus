@@ -72,6 +72,17 @@ describe("calculateTrackSignal", () => {
 })
 
 describe("trackSweetSpotRating", () => {
+  it("moves the sweet spot away from a slow finish", () => {
+    const slow = hike({
+      paceRatio: 1.5,
+      completionFraction: 1,
+      turnedAround: false,
+    })
+
+    expect(effortEnjoyment(slow)).toBe(-0.6)
+    expect(trackSweetSpotRating(slow)).toBe(2)
+  })
+
   it("likes a comfortable hike and dislikes a turnaround", () => {
     expect(trackSweetSpotRating(hike())).toBe(5)
     expect(

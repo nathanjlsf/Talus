@@ -1,5 +1,5 @@
 import type {
-  UserPreference,
+  PreferenceWithEvidence,
 } from "./preferenceTypes.js"
 
 import type { Comparison } from "./types.js"
@@ -32,7 +32,7 @@ function getComparisonKey(
 export function calculatePreferences(
   comparisons: Comparison[],
   trails: TrailPreferenceData[]
-): UserPreference[] {
+): PreferenceWithEvidence[] {
   const trailMap = new Map(
     trails.map((trail) => [trail.id, trail])
   )
@@ -147,6 +147,7 @@ export function calculatePreferences(
         attribute,
         score: 50,
         confidence: 0,
+        evidence: 0,
       }
     }
 
@@ -189,6 +190,7 @@ export function calculatePreferences(
       confidence: Number(
         confidence.toFixed(2)
       ),
+      evidence: evidenceCount,
     }
   })
 }

@@ -10,7 +10,7 @@ import activityRoutes from "./routes/activities.js"
 import experienceRoutes from "./routes/experiences.js"
 import usersRouter from "./routes/users.js"
 import { backfillEstimatedDifficulty } from "./import/osm/applyEstimatedDifficulty.js"
-import { backfillMissingPreferredRanges } from "./services/preferenceService.js"
+import { refreshStoredPreferences } from "./services/preferenceService.js"
 import { backfillTrailBounds } from "./repositories/trailGeometryRepository.js"
 
 const app = express()
@@ -57,7 +57,7 @@ try {
     backfillEstimatedDifficulty()
 
   const preferences =
-    backfillMissingPreferredRanges()
+    refreshStoredPreferences()
 
   const bounds = backfillTrailBounds()
 
@@ -67,7 +67,7 @@ try {
     bounds > 0
   ) {
     console.log(
-      `Backfilled ${estimated} trail difficulties, ${preferences} preference profiles, and ${bounds} trail bounds.`
+      `Backfilled ${estimated} trail difficulties, refreshed ${preferences} preference profiles, and backfilled ${bounds} trail bounds.`
     )
   }
 } catch (error) {
